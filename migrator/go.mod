@@ -1,6 +1,6 @@
 module github.com/identicalaffiliation/xakat0n/migrator
 
-go 1.26.1
+go 1.26.0
 
 require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
