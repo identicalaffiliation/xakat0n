@@ -33,10 +33,10 @@ tasks:
       - go test -race ./...
 
   backend:build:
-    desc: Build all backend packages
+    desc: Build all backend binaries into bin
     dir: backend
     cmds:
-      - go build ./...
+      - go build -o ../bin/ ./cmd/...
 
   backend:check:
     desc: Run all backend checks
