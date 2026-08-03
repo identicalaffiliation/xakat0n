@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: ${PG_NAME}
     ports:
-      - "${PG_PORT:-5432}:5432"
+      - "${PG_PORT:-5433}:5432"
     volumes:
       - db_data:/var/lib/postgresql
     networks:
@@ -17,6 +17,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrator:
+    build:
+      context: ./migrator
+    environment:
+      DB_URL: ${DB_URL}
+    volumes:
+      - ./migrator/configs/migrator.yml:/app/config.yml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - xakat0n
 
 volumes:
   db_data:
