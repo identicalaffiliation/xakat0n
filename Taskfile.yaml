@@ -1,43 +1,49 @@
 version: "3"
 
 tasks:
-  modules:
-    desc: Check that Go module files are up to date
+  backend:modules:
+    desc: Check that backend module files are up to date
+    dir: backend
     cmds:
       - go mod tidy
       - git diff --exit-code -- go.mod go.sum
 
-  fmt:
-    desc: Format Go source files
+  backend:fmt:
+    desc: Format backend Go source files
+    dir: backend
     cmds:
       - golangci-lint fmt
 
-  lint:
-    desc: Run linters
+  backend:lint:
+    desc: Run backend linters
+    dir: backend
     cmds:
       - golangci-lint run
 
-  vet:
-    desc: Run go vet
+  backend:vet:
+    desc: Run go vet for the backend
+    dir: backend
     cmds:
       - go vet ./...
 
-  test:
-    desc: Run tests with the race detector
+  backend:test:
+    desc: Run backend tests with the race detector
+    dir: backend
     cmds:
       - go test -race ./...
 
-  build:
-    desc: Build all packages
+  backend:build:
+    desc: Build all backend packages
+    dir: backend
     cmds:
       - go build ./...
 
-  check:
-    desc: Run all checks
-    deps: [vet, test, build]
+  backend:check:
+    desc: Run all backend checks
+    deps: [backend:vet, backend:test, backend:build]
 
-  ci:
-    desc: Run CI checks
+  backend:ci:
+    desc: Run backend CI checks
     cmds:
-      - task: modules
-      - task: check
+      - task: backend:modules
+      - task: backend:check
