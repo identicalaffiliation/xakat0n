@@ -1,0 +1,17 @@
+version: "3"
+
+tasks:
+  db:up:
+    desc: Start PostgreSQL and wait until it is ready
+    cmds:
+      - docker compose up --detach --wait postgres
+
+  db:down:
+    desc: Stop PostgreSQL
+    cmds:
+      - docker compose down
+
+  db:logs:
+    desc: Follow PostgreSQL logs
+    cmds:
+      - docker compose logs --follow postgres
