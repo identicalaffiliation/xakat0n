@@ -1,0 +1,43 @@
+version: "3"
+
+tasks:
+  modules:
+    desc: Check that Go module files are up to date
+    cmds:
+      - go mod tidy
+      - git diff --exit-code -- go.mod go.sum
+
+  fmt:
+    desc: Format Go source files
+    cmds:
+      - golangci-lint fmt
+
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  test:
+    desc: Run tests with the race detector
+    cmds:
+      - go test -race ./...
+
+  build:
+    desc: Build all packages
+    cmds:
+      - go build ./...
+
+  check:
+    desc: Run all checks
+    deps: [vet, test, build]
+
+  ci:
+    desc: Run CI checks
+    cmds:
+      - task: modules
+      - task: check
