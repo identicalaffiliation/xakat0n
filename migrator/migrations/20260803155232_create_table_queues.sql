@@ -2,8 +2,9 @@
 CREATE TYPE queue_status AS ENUM (
     'QUEUED',
     'OFFERED',
+    'CHECKOUT',
     'EXPIRED',
-    'COMPLETED',
+    'PURCHASED',
     'SOLD_OUT',
     'CANCELLED'
 );
@@ -18,20 +19,20 @@ CREATE TABLE IF NOT EXISTS queues (
     expires_at TIMESTAMPTZ
 );
 
+CREATE UNIQUE INDEX idx_queue_unique_user_product
+    ON queues (product_id, user_id)
+    WHERE status IN ('QUEUED', 'OFFERED', 'CHECKOUT', 'SOLD_OUT');
+
+CREATE INDEX idx_queue_product_status
+    ON queues (product_id, status)
+    WHERE status IN ('OFFERED', 'CHECKOUT');
+
 CREATE INDEX idx_queue_product_status_created
     ON queues (product_id, status, created_at);
 
-CREATE UNIQUE INDEX idx_queue_unique_active
-    ON queues (product_id, user_id)
-    WHERE status IN ('QUEUED', 'OFFERED');
-
-CREATE UNIQUE INDEX idx_queue_one_offered
-    ON queues (product_id)
-    WHERE status = 'OFFERED';
-
 -- +goose Down
 DROP INDEX IF EXISTS idx_queue_product_status_created;
-DROP INDEX IF EXISTS idx_queue_unique_active;
-DROP INDEX IF EXISTS idx_queue_one_offered;
+DROP INDEX IF EXISTS idx_queue_product_status;
+DROP INDEX IF EXISTS idx_queue_unique_user_product;
 DROP TABLE IF EXISTS queues;
 DROP TYPE IF EXISTS queue_status;

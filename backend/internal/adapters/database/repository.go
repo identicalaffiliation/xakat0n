@@ -73,18 +73,24 @@ func (repo *QueueRepository) TryPromoteUser(
 		updated_at=now(), 
 		expires_at=now() + $3::interval
 		WHERE id = $1
-		AND status = 'QUEUED'
+		AND status = 'QUEUED'::queue_status
 		AND NOT EXISTS (
 			SELECT 1 FROM queues
 			WHERE product_id = $2
-			AND status = 'OFFERED'
+			AND status IN ('OFFERED', 'CHECKOUT')
+		)
+		AND NOT EXISTS(
+			SELECT 1 FROM queues
+			WHERE product_id = $2
+			AND status = 'SOLD_OUT'::queue_status
 		)
 		AND NOT EXISTS(
 			SELECT 1 FROM queues AS q
 			WHERE q.product_id = $2
-			AND q.status = 'QUEUED'
+			AND q.status = 'QUEUED'::queue_status
 			AND q.created_at < queues.created_at
 		)
+		
 		RETURNING expires_at`
 
 	var expiresAt time.Time

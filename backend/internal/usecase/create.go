@@ -69,7 +69,7 @@ func (u *CreateQueueUsecase) CreateQueue(
 	})
 	if err != nil {
 		if errors.Is(err, domain.UserAlreadyQueued) {
-			return nil, err
+			return nil, domain.UserAlreadyQueued
 		}
 
 		u.logger.Error(

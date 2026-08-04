@@ -10,6 +10,13 @@ type CreateQueueRequest struct {
 	UserID    uuid.UUID `json:"userId" validate:"required"`
 }
 
+func NewCreateRequest(productID, userID uuid.UUID) *CreateQueueRequest {
+	return &CreateQueueRequest{
+		ProductID: productID,
+		UserID:    userID,
+	}
+}
+
 type CreateQueueResponse struct {
 	Queue Queue `json:"queue"`
 }
