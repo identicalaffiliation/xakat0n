@@ -63,3 +63,7 @@ func (l *Slogger) Debug(msg string, args ...any) {
 func (l *Slogger) Error(msg string, args ...any) {
 	l.slogger.Error(msg, args...)
 }
+
+func (l *Slogger) Warn(msg string, args ...any) {
+	l.slogger.Warn(msg, args...)
+}
