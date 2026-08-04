@@ -2,6 +2,8 @@ name: Migrator CI
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "migrator/**"
       - "Taskfile.yaml"
