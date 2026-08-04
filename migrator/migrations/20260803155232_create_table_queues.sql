@@ -30,7 +30,8 @@ CREATE UNIQUE INDEX idx_queue_one_offered
     WHERE status = 'OFFERED';
 
 -- +goose Down
-DROP INDEX IF EXISTS idx_queue_product_status_position;
+DROP INDEX IF EXISTS idx_queue_product_status_created;
 DROP INDEX IF EXISTS idx_queue_unique_active;
+DROP INDEX IF EXISTS idx_queue_one_offered;
 DROP TABLE IF EXISTS queues;
 DROP TYPE IF EXISTS queue_status;
