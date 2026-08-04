@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,13 +11,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/adapters/controller"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/adapters/database"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/config"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/usecase"
+	"github.com/identicalaffiliation/xakat0n/backend/pkg/httpserver"
 	"github.com/identicalaffiliation/xakat0n/backend/pkg/logger"
 	"github.com/identicalaffiliation/xakat0n/backend/pkg/psqlpool"
 )
@@ -58,7 +54,7 @@ func main() {
 		time.Second*3,
 	)
 
-	server := setupServer(&cfg.ServerConfig, createUsecase)
+	server := httpserver.SetupServer(&cfg.ServerConfig, createUsecase)
 	notifyChan := make(chan os.Signal, 1)
 	signal.Notify(notifyChan, syscall.SIGTERM, syscall.SIGINT)
 
@@ -78,24 +74,4 @@ func main() {
 	}
 
 	slogger.Debug("server stopped gracefully..")
-}
-
-func setupServer(cfg *config.ServerConfig, createUsecase ports.CreateUsecase) *http.Server {
-	mux := chi.NewRouter()
-	mux.Use(middleware.Logger)
-	mux.Use(middleware.Recoverer)
-	mux.Use(middleware.RequestID)
-
-	mux.Post("/api/v1/products/{productId}/queue", controller.PutUserInQueue(createUsecase))
-
-	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	server := &http.Server{
-		Addr:         addr,
-		Handler:      mux,
-		ReadTimeout:  cfg.ReadTimeout,
-		WriteTimeout: cfg.WriteTimeout,
-		IdleTimeout:  cfg.IddleTimeout,
-	}
-
-	return server
 }
