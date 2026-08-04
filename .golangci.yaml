@@ -77,6 +77,9 @@ linters: # Список активных и отключённых линтер�
 
     revive:
       severity: warning  # Нарушения revive будут как предупреждения, а не ошибки
+      rules:
+        - name: package-comments
+          disabled: true
 
     forbidigo:
       exclude-godoc-examples: true  # Не применять запреты к Godoc-примерам
@@ -100,5 +103,5 @@ formatters: # Форматтеры кода (проверка стиля)
       sections: # Порядок группировки импортов
         - Standard  # Стандартная библиотека
         - Default   # Сторонние зависимости
-        - Prefix(github.com/olezhek28/golang-arch/)  # Локальные импорты проекта
+        - LocalModule  # Импорты текущего Go-модуля
       no-inline-comments: false  # Разрешить комментарии после импортов (true — запретит)
