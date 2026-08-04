@@ -1,0 +1,63 @@
+name: Migrator CI
+
+on:
+  push:
+    paths:
+      - "migrator/**"
+      - "Taskfile.yaml"
+      - ".golangci.yaml"
+      - ".github/workflows/migrator.yaml"
+  pull_request:
+    paths:
+      - "migrator/**"
+      - "Taskfile.yaml"
+      - ".golangci.yaml"
+      - ".github/workflows/migrator.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migrator-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: migrator/go.mod
+          cache-dependency-path: migrator/go.sum
+
+      - name: Set up Task
+        uses: go-task/setup-task@v1
+
+      - name: Run migrator CI checks
+        run: task migrator:ci
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: migrator/go.mod
+          cache-dependency-path: migrator/go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.11
+          working-directory: migrator

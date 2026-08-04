@@ -77,3 +77,50 @@ tasks:
     cmds:
       - docker compose build migrator
       - docker compose run --rm migrator -config config.yml -command reset
+
+  migrator:modules:
+    desc: Check that migrator module files are up to date
+    dir: migrator
+    cmds:
+      - go mod tidy
+      - git diff --exit-code -- go.mod go.sum
+
+  migrator:fmt:
+    desc: Format migrator Go source files
+    dir: migrator
+    cmds:
+      - golangci-lint fmt
+
+  migrator:lint:
+    desc: Run migrator linters
+    dir: migrator
+    cmds:
+      - golangci-lint run
+
+  migrator:vet:
+    desc: Run go vet for the migrator
+    dir: migrator
+    cmds:
+      - go vet ./...
+
+  migrator:test:
+    desc: Run migrator tests with the race detector
+    dir: migrator
+    cmds:
+      - go test -race ./...
+
+  migrator:build:
+    desc: Build all migrator binaries into bin
+    dir: migrator
+    cmds:
+      - go build -o ../bin/ ./cmd/...
+
+  migrator:check:
+    desc: Run all migrator checks
+    deps: [migrator:vet, migrator:test, migrator:build]
+
+  migrator:ci:
+    desc: Run migrator CI checks
+    cmds:
+      - task: migrator:modules
+      - task: migrator:check
