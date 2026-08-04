@@ -25,6 +25,10 @@ CREATE UNIQUE INDEX idx_queue_unique_active
     ON queues (product_id, user_id)
     WHERE status IN ('QUEUED', 'OFFERED');
 
+CREATE UNIQUE INDEX idx_queue_one_offered
+    ON queues (product_id)
+    WHERE status = 'OFFERED';
+
 -- +goose Down
 DROP INDEX IF EXISTS idx_queue_product_status_position;
 DROP INDEX IF EXISTS idx_queue_unique_active;
