@@ -21,9 +21,7 @@ const (
 	MigrationsDir       = "./../../../migrator/migrations"
 )
 
-var (
-	db *pgxpool.Pool
-)
+var db *pgxpool.Pool
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()

@@ -3,9 +3,10 @@ package logger
 import (
 	"testing"
 
-	"github.com/identicalaffiliation/xakat0n/backend/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/config"
 )
 
 func TestCreateLogger(t *testing.T) {

@@ -1,0 +1,31 @@
+name: Migrator CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "migrator/**"
+      - "Taskfile.yaml"
+      - ".golangci.yaml"
+      - ".github/workflows/migrator.yaml"
+      - ".github/workflows/go-service.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "migrator/**"
+      - "Taskfile.yaml"
+      - ".golangci.yaml"
+      - ".github/workflows/migrator.yaml"
+      - ".github/workflows/go-service.yaml"
+
+concurrency:
+  group: migrator-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/go-service.yaml
+    with:
+      service: migrator

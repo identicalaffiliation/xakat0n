@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/identicalaffiliation/xakat0n/backend/internal/ports"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/ports"
 )
 
 type TxManager struct {
@@ -43,6 +44,6 @@ func (m *TxManager) WithTx(ctx context.Context, fn func(ctx context.Context) err
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit tx: %w", err)
 	}
-	
+
 	return nil
 }
