@@ -9,57 +9,23 @@ on:
       - "Taskfile.yaml"
       - ".golangci.yaml"
       - ".github/workflows/backend.yaml"
+      - ".github/workflows/go-service.yaml"
   pull_request:
+    branches:
+      - main
     paths:
       - "backend/**"
       - "Taskfile.yaml"
       - ".golangci.yaml"
       - ".github/workflows/backend.yaml"
-
-permissions:
-  contents: read
+      - ".github/workflows/go-service.yaml"
 
 concurrency:
-  group: backend-ci-${{ github.workflow }}-${{ github.ref }}
+  group: backend-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-
-      - name: Set up Task
-        uses: go-task/setup-task@v1
-
-      - name: Run backend CI checks
-        run: task backend:ci
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: backend/go.mod
-          cache-dependency-path: backend/go.sum
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.11
-          working-directory: backend
+  ci:
+    uses: ./.github/workflows/go-service.yaml
+    with:
+      service: backend
