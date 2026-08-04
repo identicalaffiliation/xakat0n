@@ -121,3 +121,20 @@ func (repo *QueueRepository) TryPromoteUser(
 
 	return true, &expiresAt, nil
 }
+
+func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID) error {
+	const query string = `
+		UPDATE queues
+		SET status = 'CANCELLED'
+		WHERE product_id = $1 AND user_id = $2
+	`
+	result, err := repo.pool.Exec(ctx, query, productID, userID)
+	if err != nil {
+		return fmt.Errorf("quit queue: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return domain.ErrQueueNotFound
+	}
+	return nil
+}
