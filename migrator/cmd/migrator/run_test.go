@@ -9,7 +9,7 @@ import (
 
 func TestRun_InvalidCommand(t *testing.T) {
 	t.Parallel()
-	
+
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 

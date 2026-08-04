@@ -21,7 +21,7 @@ logger:
   level: debug
 `
 
-	require.NoError(t, os.WriteFile(path, []byte(body), 0644))
+	require.NoError(t, os.WriteFile(path, []byte(body), 0o644))
 
 	res, err := LoadConfig(path)
 	require.NoError(t, err)
