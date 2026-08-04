@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/dto"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/ports"
@@ -34,7 +35,7 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 		rCtx := r.Context()
 		response, err := usecase.CreateQueue(rCtx, dto.NewCreateRequest(productID, userID))
 		if err != nil {
-			if errors.Is(err, domain.UserAlreadyQueued) {
+			if errors.Is(err, domain.ErrUserAlreadyQueued) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}

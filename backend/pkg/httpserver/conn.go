@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/adapters/controller"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/config"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/ports"

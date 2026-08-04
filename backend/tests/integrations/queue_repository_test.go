@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/adapters/database"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/adapters/database"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 )
 
 func TestQueueRepository_CreateQueue(t *testing.T) {
@@ -44,7 +45,7 @@ func TestQueueRepository_CreateQueue(t *testing.T) {
 
 		_, err = repo.CreateQueue(ctx, expected)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, domain.UserAlreadyQueued)
+		assert.ErrorIs(t, err, domain.ErrUserAlreadyQueued)
 	})
 }
 

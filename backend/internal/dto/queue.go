@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 )
 

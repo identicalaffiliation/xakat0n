@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 )
 
 func TestCreateCreateRequest(t *testing.T) {

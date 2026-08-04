@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/domain"
 )
 
 type DBTX interface {
@@ -53,7 +54,7 @@ func (repo *QueueRepository) CreateQueue(ctx context.Context, queue *domain.Queu
 	)
 	if err != nil {
 		if checkUniqueViolation(err) {
-			return nil, domain.UserAlreadyQueued
+			return nil, domain.ErrUserAlreadyQueued
 		}
 
 		return nil, fmt.Errorf("queue user: %w", err)

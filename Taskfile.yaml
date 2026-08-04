@@ -5,8 +5,7 @@ tasks:
     desc: Check that backend module files are up to date
     dir: backend
     cmds:
-      - go mod tidy
-      - git diff --exit-code -- go.mod go.sum
+      - go mod tidy -diff
 
   backend:fmt:
     desc: Format backend Go source files
@@ -91,8 +90,7 @@ tasks:
     desc: Check that migrator module files are up to date
     dir: migrator
     cmds:
-      - go mod tidy
-      - git diff --exit-code -- go.mod go.sum
+      - go mod tidy -diff
 
   migrator:fmt:
     desc: Format migrator Go source files
