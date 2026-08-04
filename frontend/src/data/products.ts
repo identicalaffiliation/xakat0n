@@ -1,0 +1,107 @@
+export interface Product {
+  id: number;
+  title: string;
+  price: number;
+  category: string;
+  image: string;
+  date: string;
+}
+
+export const products: Product[] = [
+  {
+    id: 1,
+    title: 'iPhone 15 Pro Max 256GB',
+    price: 99990,
+    category: 'Электроника',
+    image: 'https://picsum.photos/seed/1/200/200',
+    date: '2 часа назад',
+  },
+  {
+    id: 2,
+    title: 'MacBook Pro 14" M3',
+    price: 149990,
+    category: 'Электроника',
+    image: 'https://picsum.photos/seed/2/200/200',
+    date: '5 часов назад',
+  },
+  {
+    id: 3,
+    title: 'Стул офисный Ergohuman',
+    price: 34990,
+    category: 'Мебель',
+    image: 'https://picsum.photos/seed/3/200/200',
+    date: 'вчера',
+  },
+  {
+    id: 4,
+    title: 'Кроссовки Nike Air Max',
+    price: 12990,
+    category: 'Одежда и обувь',
+    image: 'https://picsum.photos/seed/4/200/200',
+    date: '3 дня назад',
+  },
+  {
+    id: 5,
+    title: 'Наушники Sony WH-1000XM5',
+    price: 27990,
+    category: 'Электроника',
+    image: 'https://picsum.photos/seed/5/200/200',
+    date: '1 день назад',
+  },
+  {
+    id: 6,
+    title: 'Книга "Война и мир"',
+    price: 500,
+    category: 'Книги',
+    image: 'https://picsum.photos/seed/6/200/200',
+    date: 'неделю назад',
+  },
+  {
+    id: 7,
+    title: 'Велосипед Stels Navigator',
+    price: 18990,
+    category: 'Спорт',
+    image: 'https://picsum.photos/seed/7/200/200',
+    date: '2 дня назад',
+  },
+  {
+    id: 8,
+    title: 'Игровая приставка PlayStation 5',
+    price: 53990,
+    category: 'Электроника',
+    image: 'https://picsum.photos/seed/8/200/200',
+    date: '4 часа назад',
+  },
+  {
+    id: 9,
+    title: 'Холодильник Samsung 400л',
+    price: 45990,
+    category: 'Бытовая техника',
+    image: 'https://picsum.photos/seed/9/200/200',
+    date: 'вчера',
+  },
+  {
+    id: 10,
+    title: 'Диван угловой тканевый',
+    price: 79990,
+    category: 'Мебель',
+    image: 'https://picsum.photos/seed/10/200/200',
+    date: '3 дня назад',
+  },
+  {
+    id: 11,
+    title: 'Смарт-часы Apple Watch Ultra',
+    price: 69990,
+    category: 'Электроника',
+    image: 'https://picsum.photos/seed/11/200/200',
+    date: '1 день назад',
+  },
+  {
+    id: 12,
+    title: 'Пылесос Dyson V15',
+    price: 42990,
+    category: 'Бытовая техника',
+    image: 'https://picsum.photos/seed/12/200/200',
+    date: '5 дней назад',
+  },
+];
