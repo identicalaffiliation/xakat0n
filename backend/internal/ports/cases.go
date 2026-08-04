@@ -8,5 +8,8 @@ import (
 
 type CreateUsecase interface {
 	CreateQueue(ctx context.Context, in *dto.CreateQueueRequest) (*dto.QueueResponse, error)
-	QuiteQueue(ctx context.Context, in *dto.QuiteQueueRequest) (*dto.QueueResponse, error)
+}
+
+type QuitUsecase interface {
+	QuitQueue(ctx context.Context, in *dto.QuitQueueRequest) (*dto.QueueResponse, error)
 }

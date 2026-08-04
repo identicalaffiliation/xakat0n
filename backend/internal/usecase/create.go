@@ -79,5 +79,5 @@ func (u *CreateQueueUsecase) CreateQueue(
 		return nil, domain.ErrInternal
 	}
 
-	return dto.NewCreateResponse(&created), nil
+	return dto.NewQueueResponse(&created), nil
 }

@@ -146,7 +146,6 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 		&queue.CreatedAt,
 		&queue.UpdatedAt,
 	)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrQueueNotFound

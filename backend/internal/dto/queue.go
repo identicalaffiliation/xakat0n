@@ -22,7 +22,7 @@ type QueueResponse struct {
 	Queue Queue `json:"queue"`
 }
 
-func NewCreateResponse(queue *domain.Queue) *QueueResponse {
+func NewQueueResponse(queue *domain.Queue) *QueueResponse {
 	return &QueueResponse{
 		Queue: Queue{
 			ID:        queue.ID,

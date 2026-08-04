@@ -34,7 +34,7 @@ func TestCreateCreateResponse(t *testing.T) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	actual := NewCreateResponse(&queue)
+	actual := NewQueueResponse(&queue)
 	require.NotNil(t, actual)
 
 	assert.Equal(t, queue.ID, actual.Queue.ID)
