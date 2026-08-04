@@ -12,13 +12,14 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/ports"
 )
 
-func SetupServer(cfg *config.ServerConfig, createUsecase ports.CreateUsecase) *http.Server {
+func SetupServer(cfg *config.ServerConfig, createUsecase ports.CreateUsecase, quitUsecase ports.QuitUsecase) *http.Server {
 	mux := chi.NewRouter()
 	mux.Use(middleware.Logger)
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.RequestID)
 
-	mux.Post("/api/v1/products/{productId}/queue", controller.PutUserInQueue(createUsecase))
+	mux.Post("/api/v1/items/{productId}/queue", controller.PutUserInQueue(createUsecase))
+	mux.Delete("/api/v1/items/{productId}/queue/me", controller.QuitQueue(quitUsecase))
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	server := &http.Server{

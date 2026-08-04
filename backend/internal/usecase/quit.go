@@ -19,18 +19,15 @@ func NewQuitQueueUsecase(
 	repo ports.QueueRepository,
 	manager ports.TxManager,
 	logger ports.Logger,
-) *CreateQueueUsecase {
-	return &CreateQueueUsecase{
+) *QuitQueueUsecase {
+	return &QuitQueueUsecase{
 		repo:      repo,
 		txManager: manager,
 		logger:    logger,
 	}
 }
 
-func (u *QuitQueueUsecase) QuitQueue(
-	ctx context.Context,
-	in *dto.QuitQueueRequest,
-) (*dto.QueueResponse, error) {
+func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, in *dto.QuitQueueRequest) (*dto.QueueResponse, error) {
 	var queue *domain.Queue
 	err := u.txManager.WithTx(ctx, func(ctx context.Context) error {
 		result, err := u.repo.QuitQueue(ctx, in.ProductID, in.UserID)

@@ -53,8 +53,13 @@ func main() {
 		slogger,
 		time.Second*3,
 	)
+	quitUsecase := usecase.NewQuitQueueUsecase(
+		repo,
+		txManager,
+		slogger,
+	)
 
-	server := httpserver.SetupServer(&cfg.ServerConfig, createUsecase)
+	server := httpserver.SetupServer(&cfg.ServerConfig, createUsecase, quitUsecase)
 	notifyChan := make(chan os.Signal, 1)
 	signal.Notify(notifyChan, syscall.SIGTERM, syscall.SIGINT)
 

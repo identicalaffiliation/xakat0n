@@ -10,5 +10,5 @@ import (
 
 func TestCreateConn(t *testing.T) {
 	t.Parallel()
-	require.NotNil(t, SetupServer(&config.ServerConfig{}, nil))
+	require.NotNil(t, SetupServer(&config.ServerConfig{}, nil, nil))
 }
