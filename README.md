@@ -14,3 +14,20 @@ installation:
 ```sh
 task --version
 ```
+
+## golangci-lint installation
+
+Install the same golangci-lint version that is used in CI by following the
+[official installation guide](https://golangci-lint.run/welcome/install/), or
+run the official binary installation script:
+
+```sh
+curl -sSfL https://golangci-lint.run/install.sh | \
+  sh -s -- -b "$(go env GOPATH)/bin" v2.11.4
+```
+
+Verify the installation:
+
+```sh
+golangci-lint --version
+```
