@@ -122,19 +122,37 @@ func (repo *QueueRepository) TryPromoteUser(
 	return true, &expiresAt, nil
 }
 
-func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID) error {
+func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error) {
 	const query string = `
 		UPDATE queues
 		SET status = 'CANCELLED'
-		WHERE product_id = $1 AND user_id = $2
+		WHERE product_id = $1 
+		AND user_id = $2
+		AND status IN ('QUEUED', 'OFFERED', 'CHECKOUT')
+		RETURNING
+			id,
+			product_id,
+			user_id,
+			status,
+			created_at,
+			updated_at
 	`
-	result, err := repo.pool.Exec(ctx, query, productID, userID)
+	var queue domain.Queue
+	err := repo.pool.QueryRow(ctx, query, productID, userID).Scan(
+		&queue.ID,
+		&queue.ProductID,
+		&queue.UserID,
+		&queue.Status,
+		&queue.CreatedAt,
+		&queue.UpdatedAt,
+	)
+
 	if err != nil {
-		return fmt.Errorf("quit queue: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrQueueNotFound
+		}
+		return nil, fmt.Errorf("quit queue: %w", err)
 	}
 
-	if result.RowsAffected() == 0 {
-		return domain.ErrQueueNotFound
-	}
-	return nil
+	return &queue, nil
 }
