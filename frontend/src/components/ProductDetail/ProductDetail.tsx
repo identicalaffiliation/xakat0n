@@ -21,22 +21,39 @@ const ProductDetail: React.FC = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Button variant="outlined" onClick={() => navigate('/products')} sx={{ mb: 3 }}>
+      <Button
+        variant="outlined"
+        onClick={() => navigate('/products')}
+        sx={{ mb: 3, borderRadius: 2 }}
+      >
         ← Назад
       </Button>
-      <Paper sx={{ p: 4 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          borderRadius: 2,
+          boxShadow: 'none',
+          backgroundColor: '#fff',
+        }}
+      >
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
           <Box
             component="img"
             src={product.image}
             alt={product.title}
-            sx={{ width: '100%', maxWidth: 400, height: 'auto', borderRadius: 2 }}
+            sx={{
+              width: '100%',
+              maxWidth: 400,
+              height: 'auto',
+              borderRadius: 2,
+            }}
           />
           <Box>
             <Typography variant="h4" gutterBottom>
               {product.title}
             </Typography>
-            <Typography variant="h5" color="#00A2E3" sx={{ fontWeight: 700, mb: 2 }}>
+            <Typography variant="h5" color="#00AAFF" sx={{ fontWeight: 700, mb: 2 }}>
               {product.price.toLocaleString()} ₽
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -48,7 +65,12 @@ const ProductDetail: React.FC = () => {
             <Button
               variant="contained"
               size="large"
-              sx={{ mt: 3, backgroundColor: '#00A2E3', '&:hover': { backgroundColor: '#0088c7' } }}
+              sx={{
+                mt: 3,
+                backgroundColor: '#00AAFF',
+                borderRadius: 2,
+                '&:hover': { backgroundColor: '#00AAFF' },
+              }}
             >
               Купить
             </Button>

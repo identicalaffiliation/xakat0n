@@ -19,7 +19,7 @@ const AuthPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#ffffff;',
       }}
     >
       <Paper
@@ -41,7 +41,7 @@ const AuthPage = () => {
             style={{ width: 32, height: 32, marginRight: 8 }}
           />
           <Typography variant="h4" sx={{ fontWeight: 700, color: '#000000' }}>
-            Авито
+            Avito
           </Typography>
         </Box>
 
@@ -61,14 +61,14 @@ const AuthPage = () => {
           fullWidth
           variant="contained"
           sx={{
-            backgroundColor: '#00A2E3',
+            backgroundColor: '#00AAFF',
             color: '#fff',
             height: 48,
             fontSize: 16,
             fontWeight: 600,
             textTransform: 'none',
             borderRadius: 2,
-            '&:hover': { backgroundColor: '#0088c7' },
+            '&:hover': { backgroundColor: '#00AAFF' },
           }}
           onClick={handleLogin}
         >

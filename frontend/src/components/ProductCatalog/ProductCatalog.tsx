@@ -6,49 +6,64 @@ import {
   InputBase,
   Box,
   Chip,
-  Grid,
   Card,
   CardMedia,
   CardContent,
   IconButton,
+  Button,
+  InputAdornment,
 } from '@mui/material';
-import { Search, Person } from '@mui/icons-material';
-import { styled, alpha } from '@mui/material/styles';
+import { Search, Person, Close } from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import type { Product } from '../../data/products';
 import { products } from '../../data/products';
 
-const SearchWrapper = styled('div')(({ theme }) => ({
-  position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.black, 0.06),
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.common.black, 0.1),
-  },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
+const SearchWrapper = styled('div')({
+  display: 'flex',
+  alignItems: 'center',
   width: '100%',
-  maxWidth: 500,
-}));
+  maxWidth: 900,
+  border: '2px solid #00AAFF',
+  borderRadius: '16px',
+  backgroundColor: '#fff',
+  overflow: 'hidden',
+  height: 48,
+});
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0, 2),
+  padding: theme.spacing(0, 1.5),
   height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  color: '#00AAFF',
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
-  width: '100%',
+  flex: 1,
   '& .MuiInputBase-input': {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    padding: theme.spacing(0.8, 1, 0.8, 0),
+    paddingLeft: '8px',
+    fontSize: '1rem',
     transition: theme.transitions.create('width'),
     width: '100%',
+    height: '100%',
+  },
+}));
+
+const SearchButton = styled(Button)(({ theme }) => ({
+  backgroundColor: '#00AAFF',
+  color: '#fff',
+  borderRadius: 0,
+  height: '100%',
+  padding: theme.spacing(0, 3),
+  textTransform: 'none',
+  fontWeight: 400,
+  fontSize: '0.95rem',
+  minHeight: 48,
+  '&:hover': {
+    backgroundColor: '#0088cc',
   },
 }));
 
@@ -71,17 +86,43 @@ const ProductCatalog: React.FC = () => {
     navigate(`/product/${id}`);
   };
 
+  const handleSearch = () => {
+    console.log('Поиск:', searchQuery);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
   return (
-    <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <AppBar position="static" color="default" elevation={1} sx={{ backgroundColor: '#fff' }}>
-        <Toolbar>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 700, color: '#00A2E3', mr: 3, cursor: 'pointer' }}
+    <Box sx={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
+      <AppBar
+        position="sticky"
+        color="default"
+        elevation={0}
+        sx={{ backgroundColor: '#fff', top: 0, zIndex: 1100 }}
+      >
+        <Toolbar sx={{ justifyContent: 'space-between', py: 3, mt: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              ml: 8, 
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
             onClick={() => navigate('/products')}
           >
-            Авито
-          </Typography>
+            <img
+              src="/avito-logo.svg"
+              alt="Avito"
+              style={{ width: 36, height: 36, marginRight: 10 }}
+            />
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#000000', fontSize: '1.8rem' }}>
+              Avito
+            </Typography>
+          </Box>
+
           <SearchWrapper>
             <SearchIconWrapper>
               <Search />
@@ -91,86 +132,131 @@ const ProductCatalog: React.FC = () => {
               inputProps={{ 'aria-label': 'search' }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              endAdornment={
+                searchQuery ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={handleClearSearch}
+                      onMouseDown={(e) => e.preventDefault()}
+                      sx={{ mr: 0.5, color: '#999', p: 0.5 }}
+                    >
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null
+              }
             />
+            <SearchButton onClick={handleSearch}>Найти</SearchButton>
           </SearchWrapper>
-          <Box sx={{ flexGrow: 1 }} />
-          <IconButton color="inherit" sx={{ mr: 1 }}>
-            <Person />
-          </IconButton>
+
+          <Box sx={{ flexShrink: 0, mr: 2 }}>
+            <IconButton color="inherit" size="large">
+              <Person fontSize="large" />
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, py: 2 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+      <Box sx={{ maxWidth: 1400, mx: 'auto', px: 2, pt: 3, pb: 2 }}> {/* увеличен maxWidth */}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
           {categories.map((cat) => (
             <Chip
               key={cat}
               label={cat}
               onClick={() => setSelectedCategory(cat)}
-              color={selectedCategory === cat ? 'primary' : 'default'}
-              variant={selectedCategory === cat ? 'filled' : 'outlined'}
-              sx={{ fontSize: '0.875rem', fontWeight: 500 }}
+              sx={{
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                borderRadius: 3,
+                height: 32,
+                ...(selectedCategory === cat
+                  ? {
+                      backgroundColor: '#00AAFF',
+                      color: '#fff',
+                      border: 'none',
+                    }
+                  : {
+                      backgroundColor: '#fff',
+                      color: '#000',
+                      border: '2px solid #00AAFF',
+                    }),
+              }}
             />
           ))}
         </Box>
 
-        <Grid container spacing={3}>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: 2.5,
+          }}
+        >
           {filteredProducts.map((product) => (
-            <Grid
-              size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+            <Box
               key={product.id}
+              sx={{ cursor: 'pointer' }}
+              onClick={() => handleProductClick(product.id)}
             >
               <Card
                 sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  cursor: 'pointer',
+                  
+                  boxShadow: 'none',
                   transition: '0.2s',
-                  '&:hover': { boxShadow: 6 },
+                  overflow: 'hidden',
                 }}
-                onClick={() => handleProductClick(product.id)}
               >
                 <CardMedia
                   component="img"
-                  height="200"
+                  height="280"
                   image={product.image}
                   alt={product.title}
+                  sx={{
+                    borderTopLeftRadius: 12,
+                    borderTopRightRadius: 12,
+                    borderBottomLeftRadius: 12,
+                    borderBottomRightRadius: 12,
+                  }}
                 />
-                <CardContent sx={{ flexGrow: 1 }}>
+                <CardContent sx={{ flexGrow: 1, p: 1, textAlign: 'left' }}>
                   <Typography
                     gutterBottom
                     variant="h6"
                     component="div"
-                    sx={{ fontWeight: 600, fontSize: '1rem' }}
+                    sx={{ fontWeight: 400, fontSize: '1.1rem', lineHeight: 1.3 }}
                   >
                     {product.title}
                   </Typography>
                   <Typography
                     variant="body1"
-                    sx={{ fontWeight: 700, color: '#00A2E3' }}
+                    sx={{ fontWeight: 700, color: '#000000', fontSize: '1.2rem' }}
                   >
                     {product.price.toLocaleString()} ₽
                   </Typography>
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ display: 'block', mt: 1 }}
+                    sx={{ display: 'block', mt: 0.5, fontSize: '0.95rem' }}
                   >
                     {product.date}
                   </Typography>
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           ))}
           {filteredProducts.length === 0 && (
-            <Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
+            <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
               <Typography variant="body1" color="text.secondary">
                 Ничего не найдено
               </Typography>
             </Box>
           )}
-        </Grid>
+        </Box>
       </Box>
     </Box>
   );
