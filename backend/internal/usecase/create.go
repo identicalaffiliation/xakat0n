@@ -34,7 +34,7 @@ func NewCreateQueueUsecase(
 func (u *CreateQueueUsecase) CreateQueue(
 	ctx context.Context,
 	in *dto.CreateQueueRequest,
-) (*dto.CreateQueueResponse, error) {
+) (*dto.QueueResponse, error) {
 	var created domain.Queue
 	err := u.txManager.WithTx(ctx, func(ctx context.Context) error {
 		queue, err := u.repo.CreateQueue(

@@ -17,3 +17,21 @@ type Queue struct {
 	UpdatedAt time.Time          `json:"updatedAt"`
 	ExpiresAt *time.Time         `json:"expiresAt,omitempty"`
 }
+
+type QueueResponse struct {
+	Queue Queue `json:"queue"`
+}
+
+func NewCreateResponse(queue *domain.Queue) *QueueResponse {
+	return &QueueResponse{
+		Queue: Queue{
+			ID:        queue.ID,
+			ProductID: queue.ProductID,
+			UserID:    queue.UserID,
+			Status:    queue.Status,
+			CreatedAt: queue.CreatedAt,
+			UpdatedAt: queue.UpdatedAt,
+			ExpiresAt: queue.ExpiresAt,
+		},
+	}
+}
