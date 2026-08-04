@@ -18,6 +18,21 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DB_URL: ${DB_URL}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/internal/configs/backend.yml:/app/config.yml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - xakat0n
+
   migrator:
     build:
       context: ./migrator

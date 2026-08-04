@@ -15,6 +15,15 @@ tasks:
     cmds:
       - docker compose logs --follow postgres
 
+  backend:up:
+    desc: Start backend service
+    cmds:
+      - docker compose up --build -d backend
+  backend:down:
+    desc: Stop backend service
+    cmds:
+      - docker compose down backend
+
   migrator:up:
     desc: migrations up
     cmds:
@@ -30,3 +39,7 @@ tasks:
     cmds:
       - docker compose build migrator
       - docker compose run --rm migrator -config config.yml -command reset
+
+  clean:
+    cmds:
+      - docker compose down -v
