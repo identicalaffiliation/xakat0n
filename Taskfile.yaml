@@ -57,8 +57,23 @@ tasks:
     desc: Stop PostgreSQL
     cmds:
       - docker compose down
-
   db:logs:
     desc: Follow PostgreSQL logs
     cmds:
       - docker compose logs --follow postgres
+
+  migrator:up:
+    desc: migrations up
+    cmds:
+      - docker compose build migrator
+      - docker compose run --rm migrator
+  migrator:down:
+    desc: migrations down
+    cmds:
+      - docker compose build migrator
+      - docker compose run --rm migrator -config config.yml -command down
+  migrator:reset:
+    desc: migrations reset
+    cmds:
+      - docker compose build migrator
+      - docker compose run --rm migrator -config config.yml -command reset
