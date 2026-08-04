@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/identicalaffiliation/xakat0n/migrator/config"
+	"github.com/identicalaffiliation/xakat0n/migrator/internal/config"
 	"github.com/identicalaffiliation/xakat0n/migrator/pkg/logger"
 
 	_ "github.com/jackc/pgx/v5/stdlib"

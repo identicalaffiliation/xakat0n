@@ -12,15 +12,14 @@ CREATE TABLE IF NOT EXISTS queues (
     id UUID PRIMARY KEY NOT NULL,
     product_id UUID NOT NULL,
     user_id UUID NOT NULL,
-    position BIGINT NOT NULL,
     status queue_status NOT NULL DEFAULT 'QUEUED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_queue_product_status_position
-    ON queues (product_id, status, position);
+CREATE INDEX idx_queue_product_status_created
+    ON queues (product_id, status, created_at);
 
 CREATE UNIQUE INDEX idx_queue_unique_active
     ON queues (product_id, user_id)

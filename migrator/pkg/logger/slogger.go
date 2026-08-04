@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/identicalaffiliation/xakat0n/migrator/config"
+	"github.com/identicalaffiliation/xakat0n/migrator/internal/config"
 )
 
 const (

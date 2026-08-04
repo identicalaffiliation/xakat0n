@@ -24,7 +24,7 @@ services:
     environment:
       DB_URL: ${DB_URL}
     volumes:
-      - ./migrator/configs/migrator.yml:/app/config.yml:ro
+      - ./migrator/internal/configs/migrator.yml:/app/config.yml:ro
     depends_on:
       postgres:
         condition: service_healthy
