@@ -146,7 +146,6 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 		&queue.CreatedAt,
 		&queue.UpdatedAt,
 	)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrQueueNotFound
@@ -163,7 +162,6 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 	`
 	var queueIDToPromote uuid.UUID
 	err = repo.pool.QueryRow(ctx, userToPromoteQuery, productID).Scan(&queueIDToPromote)
-
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &queue, nil
