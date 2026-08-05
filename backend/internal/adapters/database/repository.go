@@ -122,8 +122,8 @@ func (repo *QueueRepository) TryPromoteUser(
 	return true, &expiresAt, nil
 }
 
-func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error) {
-	const query string = `
+func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID, ttl time.Duration) (*domain.Queue, error) {
+	const quitUserQuery string = `
 		UPDATE queues
 		SET status = 'CANCELLED'
 		WHERE product_id = $1 
@@ -138,7 +138,7 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 			updated_at
 	`
 	var queue domain.Queue
-	err := repo.pool.QueryRow(ctx, query, productID, userID).Scan(
+	err := repo.pool.QueryRow(ctx, quitUserQuery, productID, userID).Scan(
 		&queue.ID,
 		&queue.ProductID,
 		&queue.UserID,
@@ -146,11 +146,34 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 		&queue.CreatedAt,
 		&queue.UpdatedAt,
 	)
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrQueueNotFound
 		}
 		return nil, fmt.Errorf("quit queue: %w", err)
+	}
+
+	const userToPromoteQuery string = `
+		SELECT id
+		FROM queues
+		WHERE product_id = $1 AND status = 'QUEUED'::queue_status
+		ORDER BY created_at
+		LIMIT 1
+	`
+	var queueIDToPromote uuid.UUID
+	err = repo.pool.QueryRow(ctx, userToPromoteQuery, productID).Scan(&queueIDToPromote)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &queue, nil
+		}
+		return nil, err
+	}
+
+	_, _, err = repo.TryPromoteUser(ctx, queueIDToPromote, productID, ttl)
+	if err != nil {
+		return nil, err
 	}
 
 	return &queue, nil

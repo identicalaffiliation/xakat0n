@@ -57,6 +57,7 @@ func main() {
 		repo,
 		txManager,
 		slogger,
+		time.Second*3,
 	)
 
 	server := httpserver.SetupServer(&cfg.ServerConfig, createUsecase, quitUsecase)
