@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/config"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpserver"
@@ -46,10 +47,18 @@ func main() {
 
 	txManager := tx.NewManager(pool, slogger)
 
+	authModule, err := auth.New(cfg.JWTConfig.PrivateKeyPath)
+	if err != nil {
+		slogger.Error(
+			"error", err,
+		)
+		return
+	}
 	queueModule := queue.New(pool, txManager, slogger, time.Second*3)
 
 	router := httpserver.NewRouter()
 	queueModule.RegisterRoutes(router)
+	authModule.RegisterRoutes(router)
 
 	server := httpserver.New(&cfg.ServerConfig, router)
 	notifyChan := make(chan os.Signal, 1)
