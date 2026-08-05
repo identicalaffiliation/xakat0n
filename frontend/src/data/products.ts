@@ -5,6 +5,7 @@ export interface Product {
   category: string;
   image: string;
   date: string;
+  stock: number;
 }
 
 export const products: Product[] = [
@@ -15,6 +16,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/1/200/200',
     date: '2 часа назад',
+    stock: 1,
   },
   {
     id: 2,
@@ -23,6 +25,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/2/200/200',
     date: '5 часов назад',
+    stock: 1,
   },
   {
     id: 3,
@@ -31,6 +34,7 @@ export const products: Product[] = [
     category: 'Мебель',
     image: 'https://picsum.photos/seed/3/200/200',
     date: 'вчера',
+    stock: 0,
   },
   {
     id: 4,
@@ -39,6 +43,7 @@ export const products: Product[] = [
     category: 'Одежда и обувь',
     image: 'https://picsum.photos/seed/4/200/200',
     date: '3 дня назад',
+    stock: 0,
   },
   {
     id: 5,
@@ -47,6 +52,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/5/200/200',
     date: '1 день назад',
+    stock: 3,
   },
   {
     id: 6,
@@ -55,6 +61,7 @@ export const products: Product[] = [
     category: 'Книги',
     image: 'https://picsum.photos/seed/6/200/200',
     date: 'неделю назад',
+    stock: 1,
   },
   {
     id: 7,
@@ -63,6 +70,7 @@ export const products: Product[] = [
     category: 'Спорт',
     image: 'https://picsum.photos/seed/7/200/200',
     date: '2 дня назад',
+    stock: 8,
   },
   {
     id: 8,
@@ -71,6 +79,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/8/200/200',
     date: '4 часа назад',
+    stock: 1,
   },
   {
     id: 9,
@@ -79,6 +88,7 @@ export const products: Product[] = [
     category: 'Бытовая техника',
     image: 'https://picsum.photos/seed/9/200/200',
     date: 'вчера',
+    stock: 0,
   },
   {
     id: 10,
@@ -87,6 +97,7 @@ export const products: Product[] = [
     category: 'Мебель',
     image: 'https://picsum.photos/seed/10/200/200',
     date: '3 дня назад',
+    stock: 1,
   },
   {
     id: 11,
@@ -95,6 +106,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/11/200/200',
     date: '1 день назад',
+    stock: 1,
   },
   {
     id: 12,
@@ -103,6 +115,7 @@ export const products: Product[] = [
     category: 'Бытовая техника',
     image: 'https://picsum.photos/seed/12/200/200',
     date: '5 дней назад',
+    stock: 2,
   },
 
   {
@@ -112,6 +125,7 @@ export const products: Product[] = [
     category: 'Бытовая техника',
     image: 'https://picsum.photos/seed/13/200/200',
     date: '2 дня назад',
+    stock: 4,
   },
   {
     id: 14,
@@ -120,6 +134,7 @@ export const products: Product[] = [
     category: 'Детские товары',
     image: 'https://picsum.photos/seed/14/200/200',
     date: 'неделю назад',
+    stock: 20,
   },
   {
     id: 15,
@@ -128,6 +143,7 @@ export const products: Product[] = [
     category: 'Одежда и обувь',
     image: 'https://picsum.photos/seed/15/200/200',
     date: '5 дней назад',
+    stock: 3,
   },
   {
     id: 16,
@@ -136,6 +152,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/16/200/200',
     date: 'вчера',
+    stock: 0,
   },
   {
     id: 17,
@@ -144,6 +161,7 @@ export const products: Product[] = [
     category: 'Мебель',
     image: 'https://picsum.photos/seed/17/200/200',
     date: '3 дня назад',
+    stock: 1,
   },
   {
     id: 18,
@@ -152,6 +170,7 @@ export const products: Product[] = [
     category: 'Спорт',
     image: 'https://picsum.photos/seed/18/200/200',
     date: '4 дня назад',
+    stock: 2,
   },
     {
     id: 19,
@@ -160,6 +179,7 @@ export const products: Product[] = [
     category: 'Электроника',
     image: 'https://picsum.photos/seed/19/200/200',
     date: 'вчера',
+    stock: 7,
   },
   {
     id: 20,
@@ -168,5 +188,6 @@ export const products: Product[] = [
     category: 'Бытовая техника',
     image: 'https://picsum.photos/seed/20/200/200',
     date: '2 дня назад',
+    stock: 6,
   },
 ];

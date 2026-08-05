@@ -24,7 +24,7 @@ const SearchWrapper = styled('div')({
   width: '100%',
   maxWidth: 900,
   border: '2px solid #00AAFF',
-  borderRadius: '16px',
+  borderRadius: '20px',
   backgroundColor: '#fff',
   overflow: 'hidden',
   height: 48,
@@ -94,6 +94,12 @@ const ProductCatalog: React.FC = () => {
     setSearchQuery('');
   };
 
+  const getStockText = (stock: number) => {
+    if (stock === 0) return 'Нет в наличии';
+    if (stock === 1) return 'В наличии: один';
+    return 'В наличии: несколько';
+  };
+
   return (
     <Box sx={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
       <AppBar
@@ -102,12 +108,12 @@ const ProductCatalog: React.FC = () => {
         elevation={0}
         sx={{ backgroundColor: '#fff', top: 0, zIndex: 1100 }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between', py: 3, mt: 2 }}>
+        <Toolbar sx={{ justifyContent: 'space-between', py: 2, mt: 1 }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
-              ml: 8, 
+              ml: 8,
               cursor: 'pointer',
               flexShrink: 0,
             }}
@@ -159,7 +165,7 @@ const ProductCatalog: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Box sx={{ maxWidth: 1400, mx: 'auto', px: 2, pt: 3, pb: 2 }}> {/* увеличен maxWidth */}
+      <Box sx={{ maxWidth: 1400, mx: 'auto', px: 2, pt: 3, pb: 2 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.5 }}>
           {categories.map((cat) => (
             <Chip
@@ -169,11 +175,11 @@ const ProductCatalog: React.FC = () => {
               sx={{
                 fontSize: '0.95rem',
                 fontWeight: 500,
-                borderRadius: 3,
+                borderRadius: 4,
                 height: 32,
                 ...(selectedCategory === cat
                   ? {
-                      backgroundColor: '#00AAFF',
+                      backgroundColor: '#ff5722',
                       color: '#fff',
                       border: 'none',
                     }
@@ -205,25 +211,40 @@ const ProductCatalog: React.FC = () => {
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  
+                  borderRadius: 4, 
                   boxShadow: 'none',
                   transition: '0.2s',
                   overflow: 'hidden',
                 }}
               >
-                <CardMedia
-                  component="img"
-                  height="280"
-                  image={product.image}
-                  alt={product.title}
-                  sx={{
-                    borderTopLeftRadius: 12,
-                    borderTopRightRadius: 12,
-                    borderBottomLeftRadius: 12,
-                    borderBottomRightRadius: 12,
-                  }}
-                />
-                <CardContent sx={{ flexGrow: 1, p: 1, textAlign: 'left' }}>
+                <Box sx={{ position: 'relative' }}>
+                  <CardMedia
+                    component="img"
+                    height="280"
+                    image={product.image}
+                    alt={product.title}
+                    sx={{
+                      borderRadius: 4,
+                    }}
+                  />
+                  {product.stock === 1 && (
+                    <Chip
+                      label="Лимитированный"
+                      sx={{
+                        position: 'absolute',
+                        top: 12,
+                        left: 12,
+                        backgroundColor: '#ff5722',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        borderRadius: 3,
+                        height: 28,
+                      }}
+                    />
+                  )}
+                </Box>
+                <CardContent sx={{ flexGrow: 1, p: 1.5, textAlign: 'left' }}>
                   <Typography
                     gutterBottom
                     variant="h6"
@@ -241,9 +262,20 @@ const ProductCatalog: React.FC = () => {
                   <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ display: 'block', mt: 0.5, fontSize: '0.95rem' }}
+                    sx={{ display: 'block', mt: 0.5, fontSize: '0.9rem' }}
                   >
                     {product.date}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                      color: '#00C853',
+                      mt: 0.5,
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {getStockText(product.stock)}
                   </Typography>
                 </CardContent>
               </Card>
