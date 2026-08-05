@@ -1,5 +1,8 @@
 # xakat0n
 
+Карта продуктовой документации — `docs/overview.md`. Устройство backend-кода (модули, слои,
+как добавить ручку или новый модуль) — `backend/README.md`.
+
 ## Task installation
 
 Install [Task](https://taskfile.dev/docs/installation) using Go:
