@@ -113,6 +113,45 @@ presentation/http  →  application  →  ports  ←  infrastructure/postgres
    могут быть уже применены на чьей-то локальной БД, переименование ломает версионирование
    goose).
 
+## RSA-ключи для JWT
+
+Auth-модуль подписывает JWT алгоритмом RS256. Для локального запуска создай пару RSA-ключей
+в каталоге `backend/keys` из корня репозитория:
+
+```sh
+mkdir -p backend/keys
+
+openssl genpkey \
+  -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:2048 \
+  -out backend/keys/private.pem
+
+openssl pkey \
+  -in backend/keys/private.pem \
+  -pubout \
+  -out backend/keys/public.pem
+
+chmod 600 backend/keys/private.pem
+```
+
+После генерации файлы должны находиться здесь:
+
+```text
+backend/keys/private.pem  # auth-сервис подписывает токены; не коммитить
+backend/keys/public.pem   # сервисы проверяют подпись; можно коммитить
+```
+
+Пути внутри контейнера задаются в `internal/configs/backend.yml` как
+`./keys/private.pem` и `./keys/public.pem`. `docker-compose.yaml` монтирует локальные файлы в
+`/app/keys/private.pem` и `/app/keys/public.pem`, поэтому дополнительных действий для Docker не
+нужно. Приватный ключ уже исключён из Git через корневой `.gitignore`.
+
+После создания ключей пересобери backend:
+
+```sh
+docker compose up --build --force-recreate -d backend
+```
+
 ## Тесты и проверки
 
 - `task backend:vet` / `task backend:test` (с `-race`) / `task backend:build` — по отдельности,
