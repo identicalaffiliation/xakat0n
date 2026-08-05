@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS items (
 );
 
 CREATE INDEX idx_items_on_created_at ON items(created_at);
+CREATE INDEX idx_items_on_id ON items(id);
 
 -- +goose Down
 DROP TABLE IF EXISTS items;

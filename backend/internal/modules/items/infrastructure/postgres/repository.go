@@ -2,10 +2,13 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
+	"github.com/jackc/pgx/v5"
 )
 
 type ItemsRepository struct {
@@ -65,4 +68,28 @@ func (repo *ItemsRepository) GetAll(ctx context.Context) ([]*domain.Item, error)
 	}
 
 	return items, nil
+}
+
+func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) (*domain.Item, error) {
+	const query = `SELECT * FROM items WHERE id = $1`
+	var item domain.Item
+	err := repo.pool.QueryRow(ctx, query, itemID).Scan(
+		&item.ID,
+		&item.Title,
+		&item.Description,
+		&item.Price,
+		&item.Category,
+		&item.IsLimited,
+		&item.Stock,
+		&item.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrItemNotFound
+		}
+
+		return nil, fmt.Errorf("get item: %w", err)
+	}
+	
+	return &item, nil
 }
