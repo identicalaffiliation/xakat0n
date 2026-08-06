@@ -8,6 +8,7 @@ type (
 		LoggerConfig    LoggerConfig   `yaml:"logger"`
 		PostgresConfig  PostgresConfig `yaml:"postgres"`
 		ServerConfig    ServerConfig   `yaml:"server"`
+		QueueConfig     QueueConfig    `yaml:"queue"`
 	}
 
 	LoggerConfig struct {
@@ -27,5 +28,9 @@ type (
 		ReadTimeout  time.Duration `yaml:"read_timeout"`
 		WriteTimeout time.Duration `yaml:"write_timeout"`
 		IddleTimeout time.Duration `yaml:"iddle_timeout"`
+	}
+
+	QueueConfig struct {
+		PurchaseWindow time.Duration `yaml:"purchase_window"`
 	}
 )

@@ -211,8 +211,6 @@ paths:
                     next_slot_free_in_seconds: null
                     expires_in_seconds: 90
                     expires_at: "2026-08-04T12:06:30Z"
-                    checkout_started_at: null
-                    payment_attempts: 0
                     created_at: "2026-08-04T12:05:00Z"
                     server_time: "2026-08-04T12:05:00Z"
                 queued:
@@ -225,8 +223,6 @@ paths:
                     next_slot_free_in_seconds: 42
                     expires_in_seconds: null
                     expires_at: null
-                    checkout_started_at: null
-                    payment_attempts: 0
                     created_at: "2026-08-04T12:05:00Z"
                     server_time: "2026-08-04T12:05:00Z"
         '401':
@@ -404,7 +400,7 @@ paths:
           description: >
             Исход зафиксирован. При paid заявка в PURCHASED;
             при failed — по-прежнему в CHECKOUT с прежним остатком
-            окна и увеличенным payment_attempts
+            окна
           content:
             application/json:
               schema:
@@ -618,19 +614,6 @@ components:
             Абсолютный дедлайн окна, единый для OFFERED и CHECKOUT.
             Выставляется один раз при выдаче права. Для отображения
             и отладки; для отсчёта использовать expires_in_seconds.
-        checkout_started_at:
-          type: string
-          format: date-time
-          nullable: true
-          description: >
-            Когда пользователь перешёл к оформлению. В решениях
-            не участвует: различает варианты сообщения при EXPIRED —
-            «не дошёл до оформления» и «не успел оплатить».
-        payment_attempts:
-          type: integer
-          description: >
-            Число зафиксированных попыток оплаты. Не ограничено;
-            используется в сообщениях и аналитике.
         created_at:
           type: string
           format: date-time
@@ -647,8 +630,6 @@ components:
         next_slot_free_in_seconds: null
         expires_in_seconds: 47
         expires_at: "2026-08-04T12:05:00Z"
-        checkout_started_at: null
-        payment_attempts: 0
         created_at: "2026-08-04T12:00:00Z"
         server_time: "2026-08-04T12:04:13Z"
 
@@ -676,8 +657,6 @@ components:
           next_slot_free_in_seconds: null
           expires_in_seconds: 42
           expires_at: "2026-08-04T12:05:00Z"
-          checkout_started_at: "2026-08-04T12:04:18Z"
-          payment_attempts: 0
           created_at: "2026-08-04T12:00:00Z"
           server_time: "2026-08-04T12:04:18Z"
 

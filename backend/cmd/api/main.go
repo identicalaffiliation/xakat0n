@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/config"
@@ -46,7 +45,7 @@ func main() {
 
 	txManager := tx.NewManager(pool, slogger)
 
-	queueModule := queue.New(pool, txManager, slogger, time.Second*3)
+	queueModule := queue.New(pool, txManager, slogger, cfg.QueueConfig.PurchaseWindow)
 
 	router := httpserver.NewRouter()
 	queueModule.RegisterRoutes(router)
