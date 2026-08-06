@@ -62,7 +62,7 @@ func TestAdvanceQueueUsecase_NFR1_Atomicity(t *testing.T) {
 		truncate(db, t)
 
 		itemID := uuid.New()
-		seedItem(t, itemID, 1, true)
+		seedItem(t, itemID, 1)
 		seedQueuedBatch(t, itemID, 100)
 
 		usecase := newAdvanceQueueUsecase()
@@ -92,7 +92,7 @@ func TestAdvanceQueueUsecase_NFR1_Atomicity(t *testing.T) {
 		truncate(db, t)
 
 		itemID := uuid.New()
-		seedItem(t, itemID, 5, true)
+		seedItem(t, itemID, 5)
 		ids := seedQueuedBatch(t, itemID, 100)
 
 		usecase := newAdvanceQueueUsecase()
@@ -133,7 +133,7 @@ func TestAdvanceQueueUsecase_ExpireAndPromoteInSingleCall(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
 	now := time.Now().UTC()
 	past := now.Add(-time.Second)
@@ -156,7 +156,7 @@ func TestAdvanceQueueUsecase_SoldOut(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
 	seedTicket(t, uuid.New(), itemID, uuid.New(), domain.QueueStatusPurchased, time.Now().UTC(), nil)
 	ids := seedQueuedBatch(t, itemID, 3)
@@ -174,7 +174,7 @@ func TestAdvanceQueueUsecase_Idempotent(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 	seedQueuedBatch(t, itemID, 3)
 
 	usecase := newAdvanceQueueUsecase()

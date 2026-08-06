@@ -15,18 +15,18 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 )
 
-func newGetMyTicketUsecase(ttl time.Duration) *application.GetMyTicketUsecase {
+func newGetMyTicketUsecase() *application.GetMyTicketUsecase {
 	queueRepo := postgres.NewQueueRepository(db)
 	advanceUsecase := newAdvanceQueueUsecase()
 
-	return application.NewGetMyTicketUsecase(advanceUsecase, queueRepo, slog.Default(), ttl)
+	return application.NewGetMyTicketUsecase(advanceUsecase, queueRepo, slog.Default(), 3*time.Second)
 }
 
 func TestGetMyTicketUsecase_Queued(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
 	now := time.Now().UTC()
 	holderExpiresAt := now.Add(30 * time.Second)
@@ -38,7 +38,7 @@ func TestGetMyTicketUsecase_Queued(t *testing.T) {
 	myUserID := uuid.New()
 	seedTicket(t, uuid.New(), itemID, myUserID, domain.QueueStatusQueued, now.Add(2*time.Second), nil)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	ticket, err := usecase.GetMyTicket(context.Background(), itemID, myUserID)
 	require.NoError(t, err)
 
@@ -55,13 +55,13 @@ func TestGetMyTicketUsecase_Offered(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 5, true)
+	seedItem(t, itemID, 5)
 
 	userID := uuid.New()
 	expiresAt := time.Now().UTC().Add(10 * time.Second)
 	seedTicket(t, uuid.New(), itemID, userID, domain.QueueStatusOffered, time.Now().UTC(), &expiresAt)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	ticket, err := usecase.GetMyTicket(context.Background(), itemID, userID)
 	require.NoError(t, err)
 
@@ -76,9 +76,9 @@ func TestGetMyTicketUsecase_NoTicket(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	_, err := usecase.GetMyTicket(context.Background(), itemID, uuid.New())
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrTicketNotFound)
@@ -88,12 +88,12 @@ func TestGetMyTicketUsecase_TerminalTicketIsStillReturned(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
 	userID := uuid.New()
 	seedTicket(t, uuid.New(), itemID, userID, domain.QueueStatusCancelled, time.Now().UTC(), nil)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	ticket, err := usecase.GetMyTicket(context.Background(), itemID, userID)
 	require.NoError(t, err)
 	assert.Equal(t, domain.QueueStatusCancelled, ticket.Status)
@@ -103,12 +103,12 @@ func TestGetMyTicketUsecase_PromotesOwnTicketWithinSameCall(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
 	userID := uuid.New()
 	seedTicket(t, uuid.New(), itemID, userID, domain.QueueStatusQueued, time.Now().UTC(), nil)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	ticket, err := usecase.GetMyTicket(context.Background(), itemID, userID)
 	require.NoError(t, err)
 
@@ -122,14 +122,14 @@ func TestGetMyTicketUsecase_SoldOut(t *testing.T) {
 	truncate(db, t)
 
 	itemID := uuid.New()
-	seedItem(t, itemID, 1, true)
+	seedItem(t, itemID, 1)
 
 	seedTicket(t, uuid.New(), itemID, uuid.New(), domain.QueueStatusPurchased, time.Now().UTC(), nil)
 
 	userID := uuid.New()
 	seedTicket(t, uuid.New(), itemID, userID, domain.QueueStatusQueued, time.Now().UTC(), nil)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	ticket, err := usecase.GetMyTicket(context.Background(), itemID, userID)
 	require.NoError(t, err)
 	assert.Equal(t, domain.QueueStatusSoldOut, ticket.Status)
@@ -138,7 +138,7 @@ func TestGetMyTicketUsecase_SoldOut(t *testing.T) {
 func TestGetMyTicketUsecase_ItemNotFound(t *testing.T) {
 	truncate(db, t)
 
-	usecase := newGetMyTicketUsecase(3 * time.Second)
+	usecase := newGetMyTicketUsecase()
 	_, err := usecase.GetMyTicket(context.Background(), uuid.New(), uuid.New())
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrTicketNotFound)

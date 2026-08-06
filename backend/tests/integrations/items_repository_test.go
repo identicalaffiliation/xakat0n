@@ -12,14 +12,13 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
-func seedItem(t *testing.T, itemID uuid.UUID, stock int, isLimited bool) {
+func seedItem(t *testing.T, itemID uuid.UUID, stock int) {
 	t.Helper()
 
 	_, err := db.Exec(
 		context.Background(),
-		`INSERT INTO items (id, title, price, is_limited, stock) VALUES ($1, 'test item', 100, $2, $3)`,
+		`INSERT INTO items (id, title, price, is_limited, stock) VALUES ($1, 'test item', 100, true, $2)`,
 		itemID,
-		isLimited,
 		stock,
 	)
 	require.NoError(t, err)
@@ -30,7 +29,7 @@ func TestItemsRepository_LockStock(t *testing.T) {
 		truncate(db, t)
 
 		itemID := uuid.New()
-		seedItem(t, itemID, 5, true)
+		seedItem(t, itemID, 5)
 
 		repo := postgres.NewItemsRepository(db)
 		item, err := repo.LockStock(context.Background(), itemID)
