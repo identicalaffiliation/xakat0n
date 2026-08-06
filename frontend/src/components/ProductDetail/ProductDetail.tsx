@@ -67,25 +67,34 @@ const ProductDetail: React.FC = () => {
       navigate(`/product/${filteredProducts[0].id}`);
     }
   };
+  // const handleBuy = () => {
+  //   if (!product) return;
+  //   if (product.is_limited) {
+  //     if (isProductOccupied(product.id)) {
+  //       if (state.productId === product.id && state.status !== null && state.status !== 'EXPIRED' && state.status !== 'CANCELLED') {
+  //         navigate(`/product/${product.id}/queue`);
+  //         return;
+  //       }
+  //       joinQueue(product.id);
+  //       navigate(`/product/${product.id}/queue`);
+  //     } else {
+  //       startCheckout(product.id);
+  //       navigate(`/product/${product.id}/queue`);
+  //     }
+  //   } else {
+  //     alert('Обычный товар – переход к оформлению');
+  //   }
+  // };
   const handleBuy = () => {
     if (!product) return;
     if (product.is_limited) {
-      if (isProductOccupied(product.id)) {
-        if (state.productId === product.id && state.status !== null && state.status !== 'EXPIRED' && state.status !== 'CANCELLED') {
-          navigate(`/product/${product.id}/queue`);
-          return;
-        }
-        joinQueue(product.id);
-        navigate(`/product/${product.id}/queue`);
-      } else {
-        startCheckout(product.id);
-        navigate(`/product/${product.id}/queue`);
-      }
+      // Всегда встаём в очередь (для теста)
+      joinQueue(product.id);
+      navigate(`/product/${product.id}/queue`);
     } else {
       alert('Обычный товар – переход к оформлению');
     }
   };
-
   return (
     <Box sx={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
       <AppBar
