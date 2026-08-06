@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/dto"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
@@ -19,14 +20,15 @@ func Login(issuer ports.TokenIssuer) http.HandlerFunc {
 			return
 		}
 
-		if request.Username == "" {
-			http.Error(w, "username is required", http.StatusBadRequest)
+		username, err := domain.NewUsername(request.Username)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		userID := uuid.New()
 
-		token, err := issuer.Issue(userID, request.Username)
+		token, err := issuer.Issue(userID, username)
 		if err != nil {
 			http.Error(w, "failed to issue token", http.StatusInternalServerError)
 			return

@@ -7,6 +7,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/domain"
 )
 
 type Claims struct {
@@ -58,7 +60,7 @@ func NewIssuer(
 	}
 }
 
-func (i *Issuer) Issue(userID uuid.UUID, username string) (string, error) {
+func (i *Issuer) Issue(userID uuid.UUID, username domain.Username) (string, error) {
 	if i.privateKey == nil {
 		return "", errors.New("jwt private key is required")
 	}
@@ -66,7 +68,7 @@ func (i *Issuer) Issue(userID uuid.UUID, username string) (string, error) {
 	now := time.Now()
 
 	claims := NewClaims(
-		username,
+		username.String(),
 		i.issuer,
 		userID.String(),
 		i.audience,
