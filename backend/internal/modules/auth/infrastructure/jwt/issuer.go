@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"crypto/rsa"
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -62,7 +61,7 @@ func NewIssuer(
 
 func (i *Issuer) Issue(userID uuid.UUID, username domain.Username) (string, error) {
 	if i.privateKey == nil {
-		return "", errors.New("jwt private key is required")
+		return "", ErrPrivateKeyRequired
 	}
 
 	now := time.Now()
