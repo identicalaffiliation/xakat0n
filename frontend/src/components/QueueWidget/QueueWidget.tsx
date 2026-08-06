@@ -1,12 +1,43 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Box, Paper, Typography, Button } from '@mui/material';
 import { useQueue } from '../../context/QueueContext';
 
 export const QueueWidget: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { state, startCheckout, leaveQueue } = useQueue();
+  const [timer, setTimer] = useState<number | null>(null);
+  useEffect(() => {
+    if (!state.status || state.timeLeft === null) {
+      setTimer(null);
+      return;
+    }
+
+    setTimer(state.timeLeft);
+    const interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [state.status, state.timeLeft]);
+  const isQueuePage = location.pathname.includes('/queue');
+  const isCheckoutPage = location.pathname.includes('/checkout');
+  if (isQueuePage || isCheckoutPage) {
+    return null;
+  }
   if (!state.status || state.status === 'PURCHASED' || state.status === 'CANCELLED' || state.status === 'EXPIRED') {
+    return null;
+  }
+  if (location.pathname.match(/^\/product\/\d+\/queue$/)) {
     return null;
   }
 
@@ -26,7 +57,7 @@ export const QueueWidget: React.FC = () => {
   const getStatusText = () => {
     switch (state.status) {
       case 'QUEUED':
-        return `В очереди (место ${state.queuePosition || '?'})`;
+        return `В очереди`;
       case 'OFFERED':
         return 'Товар доступен!';
       case 'CHECKOUT':
@@ -61,6 +92,12 @@ export const QueueWidget: React.FC = () => {
     return null;
   };
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <Paper
       elevation={3}
@@ -80,9 +117,9 @@ export const QueueWidget: React.FC = () => {
         <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
           {getStatusText()}
         </Typography>
-        {state.status === 'QUEUED' && state.timeLeft && (
+        {timer !== null && (
           <Typography variant="caption" color="text.secondary">
-            Осталось: ~{Math.floor(state.timeLeft / 60)} мин
+            Осталось: {formatTime(timer)}
           </Typography>
         )}
         <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>

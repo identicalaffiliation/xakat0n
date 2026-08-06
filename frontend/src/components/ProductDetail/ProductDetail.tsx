@@ -12,18 +12,24 @@ import {
   Chip,
   Autocomplete,
   TextField,
+  FormControl,   
+  InputLabel,    
+  Select,        
+  MenuItem, 
 } from '@mui/material';
 import { FavoriteBorder, Favorite, Person, Search } from '@mui/icons-material';
 import { products, type Product } from '../../data/products';
-import { useQueue } from '../../context/QueueContext';
-
+// import { useQueue } from '../../context/QueueContext';
+import { useQueue, type QueueStatus } from '../../context/QueueContext';
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const product = products.find((p) => p.id === Number(id));
   const [isFavorite, setIsFavorite] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
-  const { state, startCheckout, joinQueue, isProductOccupied } = useQueue();
+  const { state, startCheckout, joinQueue, isProductOccupied, forceStatus } = useQueue();
+  
+  // const { state, startCheckout, joinQueue, isProductOccupied } = useQueue();
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return products.filter((p) =>
@@ -67,34 +73,34 @@ const ProductDetail: React.FC = () => {
       navigate(`/product/${filteredProducts[0].id}`);
     }
   };
-  // const handleBuy = () => {
-  //   if (!product) return;
-  //   if (product.is_limited) {
-  //     if (isProductOccupied(product.id)) {
-  //       if (state.productId === product.id && state.status !== null && state.status !== 'EXPIRED' && state.status !== 'CANCELLED') {
-  //         navigate(`/product/${product.id}/queue`);
-  //         return;
-  //       }
-  //       joinQueue(product.id);
-  //       navigate(`/product/${product.id}/queue`);
-  //     } else {
-  //       startCheckout(product.id);
-  //       navigate(`/product/${product.id}/queue`);
-  //     }
-  //   } else {
-  //     alert('Обычный товар – переход к оформлению');
-  //   }
-  // };
   const handleBuy = () => {
     if (!product) return;
     if (product.is_limited) {
-      // Всегда встаём в очередь (для теста)
-      joinQueue(product.id);
-      navigate(`/product/${product.id}/queue`);
+      if (isProductOccupied(product.id)) {
+        if (state.productId === product.id && state.status !== null && state.status !== 'EXPIRED' && state.status !== 'CANCELLED') {
+          navigate(`/product/${product.id}/queue`);
+          return;
+        }
+        joinQueue(product.id);
+        navigate(`/product/${product.id}/queue`);
+      } else {
+        startCheckout(product.id);
+        navigate(`/product/${product.id}/queue`);
+      }
     } else {
       alert('Обычный товар – переход к оформлению');
     }
   };
+  // const handleBuy = () => {
+  //   if (!product) return;
+  //   if (product.is_limited) {
+  //     // Всегда встаём в очередь (для теста)
+  //     joinQueue(product.id);
+  //     navigate(`/product/${product.id}/queue`);
+  //   } else {
+  //     alert('Обычный товар – переход к оформлению');
+  //   }
+  // };
   return (
     <Box sx={{ backgroundColor: '#ffffff', minHeight: '100vh' }}>
       <AppBar
@@ -366,6 +372,31 @@ const ProductDetail: React.FC = () => {
                 </Button>
               </Box>
             </Box>
+            // Только для разработки
+            {import.meta.env.DEV && (
+              <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}> // Уберу когда подвяжем бэк
+                <Typography variant="subtitle2">Тестовый режим</Typography>
+                <FormControl fullWidth size="small" sx={{ mt: 1 }}>
+                  <InputLabel>Статус товара</InputLabel>
+                  <Select
+                    value={state.status || ''}
+                    onChange={(e) => {
+                      const status = e.target.value as QueueStatus;
+                      if (product) {
+                        forceStatus(product.id, status, status === 'QUEUED' ? 480 : status === 'CHECKOUT' ? 120 : status === 'OFFERED' ? 60 : undefined);
+                        navigate(`/product/${product.id}/queue`);
+                      }
+                    }}
+                    label="Статус товара"
+                  >
+                    <MenuItem value="CHECKOUT">Оформление (CHECKOUT)</MenuItem>
+                    <MenuItem value="QUEUED">Очередь (QUEUED)</MenuItem>
+                    <MenuItem value="OFFERED">Право выдано (OFFERED)</MenuItem>
+                    <MenuItem value="EXPIRED">Время вышло (EXPIRED)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            )}
           </Box>
         </Paper>
       </Container>

@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-
 import {
   Box,
   Typography,
@@ -18,14 +16,13 @@ import {
   IconButton,
 } from '@mui/material';
 import { Person, FavoriteBorder } from '@mui/icons-material';
-import { useQueue, type QueueStatus } from '../../context/QueueContext';
-
+import { useQueue } from '../../context/QueueContext';
 import { products } from '../../data/products';
 
 const QueuePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { state, leaveQueue, expireOffer, forceStatus } = useQueue();
+  const { state, leaveQueue, expireOffer, forceStatus, joinQueue } = useQueue();
   const product = products.find((p) => p.id === Number(id));
   const [timer, setTimer] = useState<number | null>(null);
   useEffect(() => {
@@ -210,10 +207,7 @@ const QueuePage: React.FC = () => {
                         <Typography variant="body2" color="text.secondary">В очереди</Typography>
                         <Typography variant="h5" sx={{ fontWeight: 700 }}>{state.totalInQueue}</Typography>
                       </Box>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Ваше место</Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>{state.queuePosition}</Typography>
-                      </Box>
+
                       <Box>
                         <Typography variant="body2" color="text.secondary">Макс. время ожидания</Typography>
                         <Typography variant="h5" sx={{ fontWeight: 700 }}>~8 мин</Typography>
@@ -291,37 +285,203 @@ const QueuePage: React.FC = () => {
           <Box>
             {renderHeader()}
             <Container maxWidth="lg" sx={{ py: 4 }}>
-              <Typography variant="h4" gutterBottom>Время вышло</Typography>
-              <Typography variant="body1" color="text.secondary">Товар вернулся в продажу.</Typography>
-              <Button variant="contained" color="primary" onClick={() => navigate(`/product/${product.id}`)}>Встать в очередь заново</Button>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>
+                Время вышло
+              </Typography>
+              <Grid container spacing={4}>
+                <Grid size={{ xs: 12, md: 7 }}>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f9f9f9', mb: 3 }}>
+                    <Box sx={{ display: 'flex', gap: 3 }}>
+                      <Box component="img" src={product.image} alt={product.title} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{product.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">Категория: {product.category}</Typography>
+                        <Typography variant="body2" color="text.secondary">В наличии: {product.stock} шт.</Typography>
+                        {product.is_limited && <Chip label="Лимитированный" size="small" sx={{ mt: 1, backgroundColor: '#FF6163', color: '#fff' }} />}
+                      </Box>
+                    </Box>
+                  </Paper>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f9f9f9', mb: 3 }}>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Макс. время ожидания в очереди</strong>
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>~8 мин</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Оплата не прошла, вы можете встать в очередь и, если другой пользователь откажется от товара - мы обязательно сообщим вам о возможности покупки!
+                    </Typography>
+                  </Paper>
+                  {/* Левая кнопка удалена */}
+                </Grid>
+                <Grid size={{ xs: 12, md: 5 }}>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f5f5f5', mt: -2 }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
+                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'left' }}>
+                        К сожалению, вы не успели завершить оплату в отведённое время. Товар вернулся в продажу и достался следующему в очереди.
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      sx={{ py: 1.5 }}
+                      onClick={() => {
+                        joinQueue(product.id);
+                        navigate(`/product/${product.id}/queue`);
+                      }}
+                    >
+                      Встать в очередь
+                    </Button>
+                    <Button variant="outlined" fullWidth sx={{ mt: 1 }} onClick={() => navigate('/products')}>
+                      На главную
+                    </Button>
+                  </Paper>
+                </Grid>
+              </Grid>
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>Похожие товары</Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  {products.filter(p => p.id !== product.id).slice(0, 3).map(p => (
+                    <Paper key={p.id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.id}`)}>
+                      <img src={p.image} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
+                    </Paper>
+                  ))}
+                </Box>
+              </Box>
             </Container>
           </Box>
         );
+  case 'CANCELLED':
+    return (
+      <Box>
+        {renderHeader()}
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>
+            Вы вышли из очереди
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f9f9f9', mb: 3 }}>
+                <Box sx={{ display: 'flex', gap: 3 }}>
+                  <Box component="img" src={product.image} alt={product.title} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>{product.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">Категория: {product.category}</Typography>
+                    <Typography variant="body2" color="text.secondary">В наличии: {product.stock} шт.</Typography>
+                    {product.is_limited && <Chip label="Лимитированный" size="small" sx={{ mt: 1, backgroundColor: '#FF6163', color: '#fff' }} />}
+                  </Box>
+                </Box>
+              </Paper>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f9f9f9', mb: 3 }}>
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  <strong>🚪 Вы вышли из очереди</strong>
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Ваше место передано следующему участнику. Вы можете встать в очередь заново (в конец).
+                </Typography>
+              </Paper>
+              <Button variant="contained" color="primary" onClick={() => navigate(`/product/${product.id}`)}>
+                Встать в очередь заново
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f5f5f5', mt: -2 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h2" sx={{ fontSize: '4rem' }}>🚪</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#FF6163' }}>Выход из очереди</Typography>
+                </Box>
+                <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${product.id}`)}>
+                  Встать в очередь
+                </Button>
+                <Button variant="outlined" fullWidth sx={{ mt: 1 }} onClick={() => navigate('/products')}>
+                  На главную
+                </Button>
+              </Paper>
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>Похожие товары</Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {products.filter(p => p.id !== product.id).slice(0, 3).map(p => (
+                <Paper key={p.id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.id}`)}>
+                  <img src={p.image} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
+                </Paper>
+              ))}
+            </Box>
+          </Box>
+        </Container>
+      </Box>
+    );
 
-      case 'CANCELLED':
-        return (
-          <Box>
-            {renderHeader()}
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-              <Typography variant="h4" gutterBottom>Вы вышли из очереди</Typography>
-              <Typography variant="body1" color="text.secondary">Место передано следующему.</Typography>
-              <Button variant="contained" color="primary" onClick={() => navigate(`/product/${product.id}`)}>Встать в очередь заново</Button>
-            </Container>
+  case 'PURCHASED':
+    return (
+      <Box>
+        {renderHeader()}
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>
+            Покупка оформлена
+          </Typography>
+          <Grid container spacing={4}>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f9f9f9', mb: 3 }}>
+                <Box sx={{ display: 'flex', gap: 3 }}>
+                  <Box component="img" src={product.image} alt={product.title} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>{product.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">Категория: {product.category}</Typography>
+                    <Typography variant="body2" color="text.secondary">В наличии: {product.stock} шт.</Typography>
+                    {product.is_limited && <Chip label="Лимитированный" size="small" sx={{ mt: 1, backgroundColor: '#FF6163', color: '#fff' }} />}
+                  </Box>
+                </Box>
+              </Paper>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f9f9f9', mb: 3 }}>
+                <Typography variant="body1" sx={{ mb: 1 }}>
+                  <strong>✅ Заказ передан в доставку</strong>
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Спасибо за покупку! Вы можете отслеживать статус заказа в личном кабинете.
+                </Typography>
+              </Paper>
+              <Button variant="contained" color="primary" onClick={() => alert('Перейти к заказу')}>
+                Перейти к заказу
+              </Button>
+            </Grid>
+            <Grid size={{ xs: 12, md: 5 }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: 3, backgroundColor: '#f5f5f5', mt: -2 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h2" sx={{ fontSize: '4rem' }}>✅</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700, color: '#00C853' }}>Покупка оформлена</Typography>
+                </Box>
+                <Button variant="contained" color="success" fullWidth sx={{ py: 1.5 }} onClick={() => alert('Перейти к заказу')}>
+                  Перейти к заказу
+                </Button>
+                <Button variant="outlined" fullWidth sx={{ mt: 1 }} onClick={() => navigate('/products')}>
+                  Купить ещё
+                </Button>
+              </Paper>
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>Похожие товары</Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {products.filter(p => p.id !== product.id).slice(0, 3).map(p => (
+                <Paper key={p.id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.id}`)}>
+                  <img src={p.image} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
+                </Paper>
+              ))}
+            </Box>
           </Box>
-        );
-
-      case 'PURCHASED':
-        return (
-          <Box>
-            {renderHeader()}
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-              <Typography variant="h4" gutterBottom>Покупка оформлена</Typography>
-              <Typography variant="body1" color="text.secondary">Заказ передан в доставку.</Typography>
-              <Button variant="contained" color="primary" onClick={() => alert('Перейти к заказу')}>Перейти к заказу</Button>
-              <Button variant="outlined" onClick={() => navigate('/products')}>Купить ещё</Button>
-            </Container>
-          </Box>
-        );
+        </Container>
+      </Box>
+    );
 
       default:
         return (
