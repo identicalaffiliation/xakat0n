@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	domain2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
+	postgres2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -17,9 +19,15 @@ func TestQueueRepository_CreateQueue(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		truncate(db, t)
 
+		itemsRepo := postgres2.NewItemsRepository(db)
+		i := domain2.NewItem("a", "a", 1)
+		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
+		items, err := itemsRepo.GetAll(context.Background())
+		require.NoError(t, err)
+		item := items[0]
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
-		expected := domain.NewQueue(uuid.New(), uuid.New())
+		expected := domain.NewQueue(item.ID, uuid.New())
 
 		actual, err := repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
@@ -36,11 +44,17 @@ func TestQueueRepository_CreateQueue(t *testing.T) {
 	t.Run("error - user already queued", func(t *testing.T) {
 		truncate(db, t)
 
+		itemsRepo := postgres2.NewItemsRepository(db)
+		i := domain2.NewItem("a", "a", 1)
+		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
+		items, err := itemsRepo.GetAll(context.Background())
+		require.NoError(t, err)
+		item := items[0]
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
-		expected := domain.NewQueue(uuid.New(), uuid.New())
+		expected := domain.NewQueue(item.ID, uuid.New())
 
-		_, err := repo.CreateQueue(ctx, expected)
+		_, err = repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
 
 		_, err = repo.CreateQueue(ctx, expected)
@@ -53,11 +67,17 @@ func TestQueueRepository_TryPromoteUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		truncate(db, t)
 
+		itemsRepo := postgres2.NewItemsRepository(db)
+		i := domain2.NewItem("a", "a", 1)
+		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
+		items, err := itemsRepo.GetAll(context.Background())
+		require.NoError(t, err)
+		item := items[0]
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
-		expected := domain.NewQueue(uuid.New(), uuid.New())
+		expected := domain.NewQueue(item.ID, uuid.New())
 
-		_, err := repo.CreateQueue(ctx, expected)
+		_, err = repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
 
 		promoted, ttl, err := repo.TryPromoteUser(
@@ -81,10 +101,16 @@ func TestQueueRepository_TryPromoteUser(t *testing.T) {
 	t.Run("catch race condition", func(t *testing.T) {
 		truncate(db, t)
 
+		itemsRepo := postgres2.NewItemsRepository(db)
+		i := domain2.NewItem("a", "a", 1)
+		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
+		items, err := itemsRepo.GetAll(context.Background())
+		require.NoError(t, err)
+		item := items[0]
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
-		expected := domain.NewQueue(uuid.New(), uuid.New())
-		_, err := repo.CreateQueue(ctx, expected)
+		expected := domain.NewQueue(item.ID, uuid.New())
+		_, err = repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
 
 		_, _, err = repo.TryPromoteUser(

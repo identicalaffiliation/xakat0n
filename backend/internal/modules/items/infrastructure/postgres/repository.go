@@ -6,9 +6,10 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
-	"github.com/jackc/pgx/v5"
 )
 
 type ItemsRepository struct {
@@ -90,6 +91,6 @@ func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) 
 
 		return nil, fmt.Errorf("get item: %w", err)
 	}
-	
+
 	return &item, nil
 }

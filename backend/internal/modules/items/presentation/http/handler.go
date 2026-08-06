@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
@@ -46,7 +47,7 @@ func GetItem(usecase ports.GetItemUsecase) http.HandlerFunc {
 				return
 			}
 		}
-		
+
 		httpx.EncodeJSON(writer, item, http.StatusOK)
 	}
 }

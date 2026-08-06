@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
 )
 
 func TestItemsRepository_CreateItem(t *testing.T) {
