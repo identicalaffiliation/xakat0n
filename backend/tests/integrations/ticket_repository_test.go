@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	domain2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
-	postgres2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	domain2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
+	postgres2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 )
