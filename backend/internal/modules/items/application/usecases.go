@@ -15,6 +15,13 @@ type GetAllItemsUsecase struct {
 	logger ports.Logger
 }
 
+func NewGetAllItemsUsecase(repo ports.ItemsRepository, log ports.Logger) *GetAllItemsUsecase {
+	return &GetAllItemsUsecase{
+		repo:   repo,
+		logger: log,
+	}
+}
+
 func (u *GetAllItemsUsecase) GetAllItems(ctx context.Context) (*dto.ItemsResponse, error) {
 	items, err := u.repo.GetAll(ctx)
 	if err != nil {
@@ -33,6 +40,13 @@ type GetItemUsecase struct {
 	logger ports.Logger
 }
 
+func NewGetItemUsecase(repo ports.ItemsRepository, log ports.Logger) *GetItemUsecase {
+	return &GetItemUsecase{
+		repo:   repo,
+		logger: log,
+	}
+}
+
 func (u *GetItemUsecase) GetItem(ctx context.Context, itemID uuid.UUID) (*dto.ItemResponse, error) {
 	item, err := u.repo.GetItemByID(ctx, itemID)
 	if err != nil {
@@ -47,6 +61,6 @@ func (u *GetItemUsecase) GetItem(ctx context.Context, itemID uuid.UUID) (*dto.It
 		)
 		return nil, domain.ErrInternal
 	}
-	
+
 	return dto.NewItemResponse(item), nil
 }
