@@ -26,5 +26,5 @@ func New(pool tx.DBTX, logger ports.Logger) *Module {
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	r.Get("/api/v1/products", httpapi.GetItems(m.getItemsUsecase))
-	r.Get("/api/v1/prodcts{productId}", httpapi.GetItem(m.getItemUsecase))
+	r.Get("/api/v1/products/{productId}", httpapi.GetItem(m.getItemUsecase))
 }
