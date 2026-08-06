@@ -179,7 +179,7 @@ const ProductCatalog: React.FC = () => {
                 height: 32,
                 ...(selectedCategory === cat
                   ? {
-                      backgroundColor: '#ff5722',
+                      backgroundColor: '#FF6163',
                       color: '#fff',
                       border: 'none',
                     }
@@ -227,14 +227,14 @@ const ProductCatalog: React.FC = () => {
                       borderRadius: 4,
                     }}
                   />
-                  {product.stock === 1 && (
+                  {product.is_limited && (
                     <Chip
                       label="Лимитированный"
                       sx={{
                         position: 'absolute',
                         top: 12,
                         left: 12,
-                        backgroundColor: '#ff5722',
+                        backgroundColor: '#FF6163',
                         color: '#fff',
                         fontWeight: 600,
                         fontSize: '0.8rem',

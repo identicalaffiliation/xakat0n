@@ -6,6 +6,8 @@ export interface Product {
   image: string;
   date: string;
   stock: number;
+  is_limited?: boolean;
+  description?: string; 
 }
 
 export const products: Product[] = [
@@ -26,6 +28,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/2/200/200',
     date: '5 часов назад',
     stock: 1,
+    is_limited: true,
   },
   {
     id: 3,
@@ -35,6 +38,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/3/200/200',
     date: 'вчера',
     stock: 0,
+    is_limited: true,
   },
   {
     id: 4,
@@ -53,6 +57,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/5/200/200',
     date: '1 день назад',
     stock: 3,
+    is_limited: true,
   },
   {
     id: 6,
@@ -89,6 +94,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/9/200/200',
     date: 'вчера',
     stock: 0,
+    description: "kfsdjfsldkfksf",
   },
   {
     id: 10,
@@ -107,6 +113,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/11/200/200',
     date: '1 день назад',
     stock: 1,
+    description: "kfsdjfsldkfksf",
   },
   {
     id: 12,
@@ -116,6 +123,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/12/200/200',
     date: '5 дней назад',
     stock: 2,
+    is_limited: true,
   },
 
   {
@@ -126,6 +134,7 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/13/200/200',
     date: '2 дня назад',
     stock: 4,
+    description: "kfsdjfsldkfksf",
   },
   {
     id: 14,
@@ -144,6 +153,9 @@ export const products: Product[] = [
     image: 'https://picsum.photos/seed/15/200/200',
     date: '5 дней назад',
     stock: 3,
+    is_limited: true,
+    description: "kfsdjfsldkfksf",
+    
   },
   {
     id: 16,

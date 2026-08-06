@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -15,13 +15,15 @@ import {
 } from '@mui/material';
 import { FavoriteBorder, Favorite, Person, Search } from '@mui/icons-material';
 import { products, type Product } from '../../data/products';
+import { useQueue } from '../../context/QueueContext';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const product = products.find((p) => p.id === Number(id));
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isFavorite, setIsFavorite] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const { state, startCheckout, joinQueue, isProductOccupied } = useQueue();
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return products.filter((p) =>
@@ -55,15 +57,32 @@ const ProductDetail: React.FC = () => {
   };
 
   const stockInfo = getStockDisplay(product.stock);
-  const handleProductSelect = (_event: any, value: Product | null) => {
-    if (value) {
+  const handleProductSelect = (_event: any, value: string | Product | null) => {
+    if (value && typeof value !== 'string') {
       navigate(`/product/${value.id}`);
     }
   };
-
   const handleSearch = () => {
     if (filteredProducts.length > 0) {
       navigate(`/product/${filteredProducts[0].id}`);
+    }
+  };
+  const handleBuy = () => {
+    if (!product) return;
+    if (product.is_limited) {
+      if (isProductOccupied(product.id)) {
+        if (state.productId === product.id && state.status !== null && state.status !== 'EXPIRED' && state.status !== 'CANCELLED') {
+          navigate(`/product/${product.id}/queue`);
+          return;
+        }
+        joinQueue(product.id);
+        navigate(`/product/${product.id}/queue`);
+      } else {
+        startCheckout(product.id);
+        navigate(`/product/${product.id}/queue`);
+      }
+    } else {
+      alert('Обычный товар – переход к оформлению');
     }
   };
 
@@ -77,6 +96,7 @@ const ProductDetail: React.FC = () => {
       >
         <Toolbar sx={{ justifyContent: 'space-between', py: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', ml: 4, flex: 1 }}>
+            {/* Логотип + кнопка "Назад" */}
             <Box
               sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', mr: 2 }}
               onClick={() => navigate('/products')}
@@ -86,7 +106,10 @@ const ProductDetail: React.FC = () => {
                 alt="Avito"
                 style={{ width: 36, height: 36, marginRight: 10 }}
               />
-              <Typography variant="h5" sx={{ fontWeight: 700, color: '#000000', fontSize: '1.8rem' }}>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 700, color: '#000000', fontSize: '1.8rem' }}
+              >
                 Avito
               </Typography>
             </Box>
@@ -104,22 +127,22 @@ const ProductDetail: React.FC = () => {
                 px: 4,
                 py: 1,
                 boxShadow: 'none',
-                '&:hover': { backgroundColor: '#0088cc', boxShadow: 'none' },
+                '&:hover': {
+                  backgroundColor: '#0088cc',
+                  boxShadow: 'none',
+                },
               }}
             >
               Назад
             </Button>
 
+            {/* Поисковик */}
             <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', mx: 2 }}>
               <Autocomplete
                 options={filteredProducts}
                 getOptionLabel={(option) => (typeof option === 'string' ? option : option.title)}
                 value={null}
-                onChange={(_event, value) => {
-                  if (value && typeof value !== 'string') {
-                    navigate(`/product/${value.id}`);
-                  }
-                }}
+                onChange={handleProductSelect}
                 inputValue={searchQuery}
                 onInputChange={(_event, newValue) => setSearchQuery(newValue)}
                 freeSolo
@@ -183,6 +206,7 @@ const ProductDetail: React.FC = () => {
             </Box>
           </Box>
 
+          {/* Иконка профиля */}
           <Box sx={{ flexShrink: 0, mr: 2 }}>
             <IconButton color="inherit" size="large">
               <Person fontSize="large" />
@@ -213,14 +237,14 @@ const ProductDetail: React.FC = () => {
                   objectFit: 'cover',
                 }}
               />
-              {product.stock === 1 && (
+              {product.is_limited && (
                 <Chip
                   label="Лимитированный"
                   sx={{
                     position: 'absolute',
                     top: 16,
                     left: 16,
-                    backgroundColor: '#ff5722',
+                    backgroundColor: '#FF6163',
                     color: '#fff',
                     fontWeight: 600,
                     fontSize: '1rem',
@@ -253,7 +277,7 @@ const ProductDetail: React.FC = () => {
                   </Typography>
                   <IconButton
                     onClick={toggleFavorite}
-                    sx={{ color: isFavorite ? '#ff5722' : '#999' }}
+                    sx={{ color: isFavorite ? '#FF6163' : '#999' }}
                   >
                     {isFavorite ? <Favorite /> : <FavoriteBorder />}
                   </IconButton>
@@ -265,6 +289,7 @@ const ProductDetail: React.FC = () => {
                 >
                   {product.price.toLocaleString()} ₽
                 </Typography>
+
                 <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem' }}>
                   <Box component="span" sx={{ fontWeight: 500, color: '#000000' }}>
                     {stockInfo.prefix}
@@ -307,6 +332,7 @@ const ProductDetail: React.FC = () => {
                     py: 1.5,
                     '&:hover': { backgroundColor: '#0088cc' },
                   }}
+                  onClick={handleBuy}
                 >
                   Купить
                 </Button>
