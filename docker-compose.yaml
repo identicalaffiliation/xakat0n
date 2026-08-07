@@ -18,6 +18,25 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DB_URL: ${DB_URL}
+      JWT_PRIVATE_KEY_PATH: ${JWT_PRIVATE_KEY_PATH:-/app/keys/private.pem}
+      JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH:-/app/keys/public.pem}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/internal/configs/backend.yml:/app/config.yml:ro
+      - ./backend/keys/private.pem:/app/keys/private.pem:ro
+      - ./backend/keys/public.pem:/app/keys/public.pem:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - xakat0n
+
   migrator:
     build:
       context: ./migrator

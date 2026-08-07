@@ -1,0 +1,31 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "Taskfile.yaml"
+      - ".golangci.yaml"
+      - ".github/workflows/backend.yaml"
+      - ".github/workflows/go-service.yaml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "Taskfile.yaml"
+      - ".golangci.yaml"
+      - ".github/workflows/backend.yaml"
+      - ".github/workflows/go-service.yaml"
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/go-service.yaml
+    with:
+      service: backend
