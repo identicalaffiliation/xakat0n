@@ -47,7 +47,7 @@ const AuthPage = () => {
 
         <TextField
           fullWidth
-          label="Телефон или email"
+          label="Имя"
           variant="outlined"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
