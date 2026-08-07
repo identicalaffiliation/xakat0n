@@ -18,12 +18,12 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 )
 
-func newCheckoutUsecase(ttl time.Duration) *checkoutapplication.CheckoutUsecase {
+func newCheckoutUsecase() *checkoutapplication.CheckoutUsecase {
 	queueRepo := postgres.NewQueueRepository(db)
 	itemsRepo := itemspostgres.NewItemsRepository(db)
 	advance := checkout.NewAdvanceAdapter(newAdvanceQueueUsecase())
 
-	return checkoutapplication.NewCheckoutUsecase(advance, itemsRepo, queueRepo, slog.Default(), ttl)
+	return checkoutapplication.NewCheckoutUsecase(advance, itemsRepo, queueRepo, slog.Default(), 3*time.Second)
 }
 
 func TestCheckoutUsecase_Success(t *testing.T) {
@@ -36,7 +36,7 @@ func TestCheckoutUsecase_Success(t *testing.T) {
 	expiresAt := time.Now().UTC().Add(30 * time.Second)
 	seedTicket(t, uuid.New(), itemID, userID, domain.QueueStatusOffered, time.Now().UTC(), &expiresAt)
 
-	usecase := newCheckoutUsecase(3 * time.Second)
+	usecase := newCheckoutUsecase()
 	result, err := usecase.StartCheckout(context.Background(), itemID, userID)
 	require.NoError(t, err)
 
@@ -58,7 +58,7 @@ func TestCheckoutUsecase_NonLimitedItemSkipsQueue(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	usecase := newCheckoutUsecase(3 * time.Second)
+	usecase := newCheckoutUsecase()
 	result, err := usecase.StartCheckout(context.Background(), itemID, uuid.New())
 	require.NoError(t, err)
 
@@ -68,7 +68,7 @@ func TestCheckoutUsecase_NonLimitedItemSkipsQueue(t *testing.T) {
 
 func TestCheckoutUsecase_NoActiveRight(t *testing.T) {
 	itemID := uuid.New()
-	usecase := newCheckoutUsecase(3 * time.Second)
+	usecase := newCheckoutUsecase()
 
 	t.Run("no ticket at all", func(t *testing.T) {
 		truncate(db, t)
@@ -126,7 +126,7 @@ func TestCheckoutUsecase_NoActiveRight(t *testing.T) {
 func TestCheckoutUsecase_ItemNotFound(t *testing.T) {
 	truncate(db, t)
 
-	usecase := newCheckoutUsecase(3 * time.Second)
+	usecase := newCheckoutUsecase()
 	_, err := usecase.StartCheckout(context.Background(), uuid.New(), uuid.New())
 	require.Error(t, err)
 	assert.ErrorIs(t, err, checkoutdomain.ErrItemNotFound)

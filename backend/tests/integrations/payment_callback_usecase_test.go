@@ -19,11 +19,11 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 )
 
-func newPaymentCallbackUsecase(ttl time.Duration) *checkoutapplication.PaymentCallbackUsecase {
+func newPaymentCallbackUsecase() *checkoutapplication.PaymentCallbackUsecase {
 	queueRepo := postgres.NewQueueRepository(db)
 	advance := checkout.NewAdvanceAdapter(newAdvanceQueueUsecase())
 
-	return checkoutapplication.NewPaymentCallbackUsecase(advance, queueRepo, slog.Default(), ttl)
+	return checkoutapplication.NewPaymentCallbackUsecase(advance, queueRepo, slog.Default(), 3*time.Second)
 }
 
 func paidRequest(ticketID uuid.UUID) *checkoutdto.PaymentCallbackRequest {
@@ -45,7 +45,7 @@ func TestPaymentCallbackUsecase_Paid(t *testing.T) {
 	expiresAt := time.Now().UTC().Add(30 * time.Second)
 	seedTicket(t, ticketID, itemID, userID, domain.QueueStatusCheckout, time.Now().UTC(), &expiresAt)
 
-	usecase := newPaymentCallbackUsecase(3 * time.Second)
+	usecase := newPaymentCallbackUsecase()
 	ticket, err := usecase.HandleCallback(context.Background(), itemID, userID, paidRequest(ticketID))
 	require.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestPaymentCallbackUsecase_Failed_DoesNotChangeStatusOrWindow(t *testing.T)
 	expiresAt := time.Now().UTC().Add(30 * time.Second)
 	seedTicket(t, ticketID, itemID, userID, domain.QueueStatusCheckout, time.Now().UTC(), &expiresAt)
 
-	usecase := newPaymentCallbackUsecase(3 * time.Second)
+	usecase := newPaymentCallbackUsecase()
 	ticket, err := usecase.HandleCallback(context.Background(), itemID, userID, failedRequest(ticketID))
 	require.NoError(t, err)
 
@@ -85,7 +85,7 @@ func TestPaymentCallbackUsecase_FailedRetriesDoNotExtendWindow(t *testing.T) {
 	expiresAt := time.Now().UTC().Add(30 * time.Second)
 	seedTicket(t, ticketID, itemID, userID, domain.QueueStatusCheckout, time.Now().UTC(), &expiresAt)
 
-	usecase := newPaymentCallbackUsecase(3 * time.Second)
+	usecase := newPaymentCallbackUsecase()
 	for i := 0; i < 10; i++ {
 		ticket, err := usecase.HandleCallback(context.Background(), itemID, userID, failedRequest(ticketID))
 		require.NoError(t, err)
@@ -98,7 +98,7 @@ func TestPaymentCallbackUsecase_FailedRetriesDoNotExtendWindow(t *testing.T) {
 
 func TestPaymentCallbackUsecase_TooLate(t *testing.T) {
 	itemID := uuid.New()
-	usecase := newPaymentCallbackUsecase(3 * time.Second)
+	usecase := newPaymentCallbackUsecase()
 
 	t.Run("paid after expiresAt", func(t *testing.T) {
 		truncate(db, t)
@@ -190,7 +190,7 @@ func TestPaymentCallbackUsecase_TicketNotFound(t *testing.T) {
 	itemID := uuid.New()
 	seedItem(t, itemID, 1)
 
-	usecase := newPaymentCallbackUsecase(3 * time.Second)
+	usecase := newPaymentCallbackUsecase()
 	_, err := usecase.HandleCallback(context.Background(), itemID, uuid.New(), paidRequest(uuid.New()))
 	require.Error(t, err)
 	assert.ErrorIs(t, err, checkoutdomain.ErrTicketNotFound)
@@ -211,7 +211,7 @@ func TestPaymentCallbackUsecase_ConcurrentPaid_ExactlyOneWins(t *testing.T) {
 	expiresAt := time.Now().UTC().Add(30 * time.Second)
 	seedTicket(t, ticketID, itemID, userID, domain.QueueStatusCheckout, time.Now().UTC(), &expiresAt)
 
-	usecase := newPaymentCallbackUsecase(3 * time.Second)
+	usecase := newPaymentCallbackUsecase()
 
 	const attempts = 20
 	var wg sync.WaitGroup
