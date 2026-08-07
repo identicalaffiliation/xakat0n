@@ -4,22 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/logger"
 )
 
 type Manager struct {
 	pool   *pgxpool.Pool
-	logger logger.Logger
+	logger slog.Logger
 }
 
-func NewManager(pool *pgxpool.Pool, l logger.Logger) *Manager {
+func NewManager(pool *pgxpool.Pool, l *slog.Logger) *Manager {
 	return &Manager{
 		pool:   pool,
-		logger: l,
+		logger: *l,
 	}
 }
 

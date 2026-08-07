@@ -22,16 +22,7 @@ var (
 	stdout = os.Stdout
 )
 
-type Logger interface {
-	Debug(msg string, args ...any)
-	Error(msg string, args ...any)
-}
-
-type Slogger struct {
-	slogger *slog.Logger
-}
-
-func NewLogger(cfg *config.APIConfig) (*Slogger, error) {
+func NewLogger(cfg *config.APIConfig) (*slog.Logger, error) {
 	levels := map[string]slog.Level{
 		LevelDebug: slog.LevelDebug,
 		LevelError: slog.LevelError,
@@ -57,14 +48,8 @@ func NewLogger(cfg *config.APIConfig) (*Slogger, error) {
 		return nil, ErrInvalidLoggerFormat
 	}
 
-	slogger := &Slogger{slogger: slog.New(h)}
+	h = NewHandlerMiddleware(h)
+
+	slogger := slog.New(h)
 	return slogger, nil
-}
-
-func (l *Slogger) Debug(msg string, args ...any) {
-	l.slogger.Debug(msg, args...)
-}
-
-func (l *Slogger) Error(msg string, args ...any) {
-	l.slogger.Error(msg, args...)
 }
