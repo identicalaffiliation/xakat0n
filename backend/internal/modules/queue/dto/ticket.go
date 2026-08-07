@@ -8,18 +8,18 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
-// Ticket — плоский DTO по схеме Ticket из api-contract.yaml (snake_case),
-// намеренно не переиспользует Queue/CreateQueueResponse (camelCase, вложенность).
+// Ticket — плоский DTO по схеме Ticket из api-contract.yaml (camelCase),
+// намеренно не переиспользует Queue/CreateQueueResponse (вложенность в "queue").
 type Ticket struct {
-	TicketID              uuid.UUID          `json:"ticket_id"`
-	ItemID                uuid.UUID          `json:"item_id"`
+	TicketID              uuid.UUID          `json:"ticketId"`
+	ItemID                uuid.UUID          `json:"itemId"`
 	Status                domain.QueueStatus `json:"status"`
 	Position              *int               `json:"position"`
-	NextSlotFreeInSeconds *int64             `json:"next_slot_free_in_seconds"`
-	ExpiresInSeconds      *int64             `json:"expires_in_seconds"`
-	ExpiresAt             *time.Time         `json:"expires_at"`
-	CreatedAt             time.Time          `json:"created_at"`
-	ServerTime            time.Time          `json:"server_time"`
+	NextSlotFreeInSeconds *int64             `json:"nextSlotFreeInSeconds"`
+	ExpiresInSeconds      *int64             `json:"expiresInSeconds"`
+	ExpiresAt             *time.Time         `json:"expiresAt"`
+	CreatedAt             time.Time          `json:"createdAt"`
+	ServerTime            time.Time          `json:"serverTime"`
 }
 
 func NewTicket(queue *domain.Queue, now time.Time) *Ticket {

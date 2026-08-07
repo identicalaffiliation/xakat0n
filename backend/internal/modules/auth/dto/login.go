@@ -11,7 +11,7 @@ func NewLoginRequest(username string) *LoginRequest {
 }
 
 type LoginResponse struct {
-	UserID   uuid.UUID `json:"user_id" validate:"required"`
+	UserID   uuid.UUID `json:"userId" validate:"required"`
 	Username string    `json:"username" validate:"required"`
 	Token    string    `json:"token" validate:"required"`
 }
