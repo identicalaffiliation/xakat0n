@@ -20,7 +20,7 @@ func TestQueueRepository_CreateQueue(t *testing.T) {
 		truncate(db, t)
 
 		itemsRepo := postgres2.NewItemsRepository(db)
-		i := domain2.NewItem("a", "a", 1)
+		i := domain2.NewItem("a", "a", 1, true)
 		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
 		items, err := itemsRepo.GetAll(context.Background())
 		require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestQueueRepository_CreateQueue(t *testing.T) {
 		truncate(db, t)
 
 		itemsRepo := postgres2.NewItemsRepository(db)
-		i := domain2.NewItem("a", "a", 1)
+		i := domain2.NewItem("a", "a", 1, true)
 		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
 		items, err := itemsRepo.GetAll(context.Background())
 		require.NoError(t, err)
@@ -68,7 +68,7 @@ func TestQueueRepository_TryPromoteUser(t *testing.T) {
 		truncate(db, t)
 
 		itemsRepo := postgres2.NewItemsRepository(db)
-		i := domain2.NewItem("a", "a", 1)
+		i := domain2.NewItem("a", "a", 1, true)
 		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
 		items, err := itemsRepo.GetAll(context.Background())
 		require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestQueueRepository_TryPromoteUser(t *testing.T) {
 		truncate(db, t)
 
 		itemsRepo := postgres2.NewItemsRepository(db)
-		i := domain2.NewItem("a", "a", 1)
+		i := domain2.NewItem("a", "a", 1, true)
 		require.NoError(t, itemsRepo.CreateItem(context.Background(), i))
 		items, err := itemsRepo.GetAll(context.Background())
 		require.NoError(t, err)

@@ -8,8 +8,8 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
-// Ticket — плоский DTO по схеме Ticket из api-contract.yaml (camelCase),
-// намеренно не переиспользует Queue/CreateQueueResponse (вложенность в "queue").
+// Ticket — плоский DTO по схеме Ticket из api-contract.yaml (camelCase).
+// Общий для POST /items/{itemId}/queue и GET /items/{itemId}/queue/me.
 type Ticket struct {
 	TicketID              uuid.UUID          `json:"ticketId"`
 	ItemID                uuid.UUID          `json:"itemId"`

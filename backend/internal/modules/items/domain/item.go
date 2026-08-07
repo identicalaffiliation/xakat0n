@@ -17,10 +17,11 @@ type Item struct {
 	CreatedAt   time.Time
 }
 
-func NewItem(title, desscription string, price int64) *Item {
+func NewItem(title, desscription string, price int64, isLimited bool) *Item {
 	return &Item{
 		Title:       title,
 		Description: desscription,
 		Price:       price,
+		IsLimited:   isLimited,
 	}
 }

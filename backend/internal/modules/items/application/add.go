@@ -21,11 +21,11 @@ func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger po
 	}
 
 	items := []*domain.Item{
-		domain.NewItem("Iphone 16 Pro", "Simple and strong", 80000),
-		domain.NewItem("Компьютерный стол", "Ширина, Высота", 15000),
-		domain.NewItem("Футбольный мяч", "Хорошее состояние", 1500),
-		domain.NewItem("Трулик", "10/10", 2500),
-		domain.NewItem("Аренда помещения под кебаб", "your best kebab place", 50000),
+		domain.NewItem("Iphone 16 Pro", "Simple and strong", 80000, true),
+		domain.NewItem("Компьютерный стол", "Ширина, Высота", 15000, true),
+		domain.NewItem("Футбольный мяч", "Хорошее состояние", 1500, false),
+		domain.NewItem("Трулик", "10/10", 2500, true),
+		domain.NewItem("Аренда помещения под кебаб", "your best kebab place", 50000, false),
 	}
 
 	for _, item := range items {
