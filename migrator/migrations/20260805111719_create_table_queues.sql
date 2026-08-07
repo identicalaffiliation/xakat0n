@@ -7,11 +7,11 @@ CREATE TYPE queue_status AS ENUM (
     'PURCHASED',
     'SOLD_OUT',
     'CANCELLED'
-);
+    );
 
 CREATE TABLE IF NOT EXISTS queues (
     id UUID PRIMARY KEY NOT NULL,
-    product_id UUID NOT NULL,
+    product_id UUID NOT NULL REFERENCES items(id),
     user_id UUID NOT NULL,
     status queue_status NOT NULL DEFAULT 'QUEUED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -36,3 +36,4 @@ DROP INDEX IF EXISTS idx_queue_product_status;
 DROP INDEX IF EXISTS idx_queue_unique_user_product;
 DROP TABLE IF EXISTS queues;
 DROP TYPE IF EXISTS queue_status;
+

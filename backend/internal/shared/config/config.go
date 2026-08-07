@@ -5,6 +5,7 @@ import "time"
 type (
 	APIConfig struct {
 		ShutdownTimeout time.Duration  `yaml:"shutdown_timeout"`
+		CheckoutTimer   time.Duration  `yaml:"checkout_timer"`
 		LoggerConfig    LoggerConfig   `yaml:"logger"`
 		PostgresConfig  PostgresConfig `yaml:"postgres"`
 		ServerConfig    ServerConfig   `yaml:"server"`

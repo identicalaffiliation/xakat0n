@@ -12,7 +12,7 @@ server:
   read_timeout: 15s
   write_timeout: 15s
   iddle_timeout: 60s
-
+  
 jwt:
   private_key_path: ./keys/private.pem
   public_key_path: ./keys/public.pem
@@ -22,3 +22,4 @@ jwt:
   ttl: 1h
 
 shutdown_timeout: 30s
+checkout_timer: 300s

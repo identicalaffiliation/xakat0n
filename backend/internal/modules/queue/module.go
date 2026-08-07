@@ -27,6 +27,6 @@ func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	route := fmt.Sprintf("/api/v1/products/{%s}/queue", httpapi.ProductIdMuxPattern)
+	route := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
 	r.With(httpx.SessionAuth).Post(route, httpapi.PutUserInQueue(m.createUsecase))
 }
