@@ -8,6 +8,18 @@ import (
 )
 
 func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger ports.Logger) {
+	all, err := itemsRepo.GetAll(ctx)
+	if err != nil {
+		logger.Error(
+			"failed to get all items",
+			"error", err,
+		)
+	}
+
+	if len(all) != 0 {
+		return
+	}
+
 	items := []*domain.Item{
 		domain.NewItem("Iphone 16 Pro", "Simple and strong", 80000),
 		domain.NewItem("Компьютерный стол", "Ширина, Высота", 15000),

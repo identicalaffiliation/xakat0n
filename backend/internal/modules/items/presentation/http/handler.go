@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ProductIdMuxPattern = "productId"
+	ItemIdMuxPattern = "itemId"
 )
 
 func GetItems(usecase ports.GetAllItemsUsecase) http.HandlerFunc {
@@ -30,7 +30,7 @@ func GetItems(usecase ports.GetAllItemsUsecase) http.HandlerFunc {
 
 func GetItem(usecase ports.GetItemUsecase) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		id, err := uuid.Parse(chi.URLParam(request, ProductIdMuxPattern))
+		id, err := uuid.Parse(chi.URLParam(request, ItemIdMuxPattern))
 		if err != nil {
 			http.Error(writer, "invalid item id", http.StatusBadRequest)
 			return
