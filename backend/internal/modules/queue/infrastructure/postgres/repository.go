@@ -62,9 +62,6 @@ func (repo *QueueRepository) CreateQueue(ctx context.Context, queue *domain.Queu
 	return &created, nil
 }
 
-// GetActiveTicket — последний активный тикет пользователя по товару
-// (QUEUED/OFFERED/CHECKOUT). Возвращает nil, если активной заявки нет:
-// терминальные тикеты (EXPIRED, PURCHASED, SOLD_OUT, CANCELLED) не считаются.
 func (repo *QueueRepository) GetActiveTicket(
 	ctx context.Context,
 	productID, userID uuid.UUID,
@@ -97,9 +94,6 @@ func (repo *QueueRepository) GetActiveTicket(
 	return &q, nil
 }
 
-// IsSoldOut — весь сток выкуплен: число PURCHASED-тикетов товара достигло
-// ёмкости. Тот же критерий, что у MarkSoldOut: базируется на покупках,
-// а не на числе слотов (OFFERED/CHECKOUT могут освободиться).
 func (repo *QueueRepository) IsSoldOut(ctx context.Context, productID uuid.UUID, stock int) (bool, error) {
 	const query = `
 		SELECT COUNT(*) FROM queues
