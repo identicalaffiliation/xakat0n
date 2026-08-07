@@ -34,13 +34,11 @@ func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	route := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Post(route, httpapi.PutUserInQueue(m.createUsecase))
-	r.With(httpx.SessionAuth).Delete(route+"/me", httpapi.QuitQueue(m.quitUsecase))
 
-	createRoute := fmt.Sprintf(route+"/{%s}/queue", httpapi.ItemIdMuxPattern)
+	createRoute := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
 	r.With(httpx.SessionAuth).Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
 
-	getMeRoute := fmt.Sprintf(route+"/{%s}/queue/me", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Get(getMeRoute, httpapi.GetMyTicket(m.getMeUsecase))
+	meRoute := fmt.Sprintf("/api/v1/items/{%s}/queue/me", httpapi.ItemIdMuxPattern)
+	r.With(httpx.SessionAuth).Delete(meRoute, httpapi.QuitQueue(m.quitUsecase))
+	r.With(httpx.SessionAuth).Get(meRoute, httpapi.GetMyTicket(m.getMeUsecase))
 }
