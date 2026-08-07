@@ -48,7 +48,6 @@ func main() {
 
 	txManager := tx.NewManager(pool, slogger)
 
-	queue := queueModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
 	items := itemsModule.New(pool, slogger)
 
 	router := httpserver.NewRouter()
@@ -56,6 +55,18 @@ func main() {
 	items.RegisterRoutes(router)
 
 	application.AddSeedData(context.Background(), postgres2.NewItemsRepository(pool), slogger)
+	auth, err := authModule.New(cfg.JWTConfig.PrivateKeyPath)
+	if err != nil {
+		slogger.Error(
+			"error", err,
+		)
+		return
+	}
+	queueModule := queue.New(pool, txManager, slogger, time.Second*3)
+
+	router := httpserver.NewRouter()
+	queue.RegisterRoutes(router)
+	auth.RegisterRoutes(router)
 
 	server := httpserver.New(&cfg.ServerConfig, router)
 	notifyChan := make(chan os.Signal, 1)
