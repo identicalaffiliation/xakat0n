@@ -88,13 +88,13 @@ const ProductDetail: React.FC = () => {
         navigate(`/product/${product.id}/queue`);
       }
     } else {
-      alert('Обычный товар – переход к оформлению');
+        startCheckout(product.id, false);
+        navigate(`/product/${product.id}/queue`);
     }
   };
   // const handleBuy = () => {
   //   if (!product) return;
   //   if (product.is_limited) {
-  //     // Всегда встаём в очередь (для теста)
   //     joinQueue(product.id);
   //     navigate(`/product/${product.id}/queue`);
   //   } else {
@@ -372,7 +372,6 @@ const ProductDetail: React.FC = () => {
                 </Button>
               </Box>
             </Box>
-            // Только для разработки
             {import.meta.env.DEV && (
               <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}> // Уберу когда подвяжем бэк
                 <Typography variant="subtitle2">Тестовый режим</Typography>
