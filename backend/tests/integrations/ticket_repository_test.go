@@ -140,6 +140,7 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
 		expected := domain.NewQueue(uuid.New(), uuid.New())
+		ensureItem(t, expected.ProductID)
 
 		_, err := repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
@@ -160,12 +161,13 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		assert.Equal(t, domain.QueueStatusCancelled, status)
 	})
 
-	t.Run("success - promote next user after offered user quits", func(t *testing.T) {
+	t.Run("success - cancel offered user", func(t *testing.T) {
 		truncate(db, t)
 
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
 		productID := uuid.New()
+		ensureItem(t, productID)
 		first := domain.NewQueue(productID, uuid.New())
 		second := domain.NewQueue(productID, uuid.New())
 
@@ -190,9 +192,8 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		err = db.QueryRow(ctx, `SELECT status, expires_at FROM queues WHERE id = $1`, second.ID).
 			Scan(&status, &expiresAt)
 		require.NoError(t, err)
-		assert.Equal(t, domain.QueueStatusOffered, status)
-		require.NotNil(t, expiresAt)
-		assert.WithinDuration(t, time.Now().Add(ttl), *expiresAt, time.Second)
+		assert.Equal(t, domain.QueueStatusQueued, status)
+		assert.Nil(t, expiresAt)
 	})
 
 	t.Run("error - queue not found", func(t *testing.T) {
