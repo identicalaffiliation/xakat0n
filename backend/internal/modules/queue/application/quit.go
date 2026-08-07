@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
@@ -37,7 +38,6 @@ func NewQuitQueueUsecase(
 
 func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.QueueResponse, error) {
 	queue, err := u.queue.QuitQueue(ctx, itemID, userID)
-
 	if err != nil {
 		if errors.Is(err, domain.ErrQueueNotFound) {
 			u.logger.Warn(

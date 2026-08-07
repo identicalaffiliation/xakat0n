@@ -6,8 +6,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/jackc/pgx/v5"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
 func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error) {

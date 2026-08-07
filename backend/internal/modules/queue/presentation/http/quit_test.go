@@ -48,10 +48,10 @@ func TestQuitQueueHandler_Success(t *testing.T) {
 	itemID := uuid.New()
 	userID := uuid.New()
 	usecase := &quitUsecaseStub{response: dto.NewQueueResponse(&domain.Queue{
-		ID:     uuid.New(),
+		ID:        uuid.New(),
 		ProductID: itemID,
-		UserID: userID,
-		Status: domain.QueueStatusCancelled,
+		UserID:    userID,
+		Status:    domain.QueueStatusCancelled,
 	})}
 	recorder := httptest.NewRecorder()
 
