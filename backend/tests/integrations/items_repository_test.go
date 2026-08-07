@@ -10,6 +10,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
+	queuedomain "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
 func TestItemsRepository_CreateItem(t *testing.T) {
@@ -81,5 +82,31 @@ func TestItemsRepository_GetItemByID(t *testing.T) {
 
 		assert.Nil(t, actual)
 		assert.ErrorIs(t, err, domain.ErrItemNotFound)
+	})
+}
+
+func TestItemsRepository_LockStock(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		truncate(db, t)
+
+		itemID := uuid.New()
+		seedItem(t, itemID, 5)
+
+		repo := postgres.NewItemsRepository(db)
+		item, err := repo.LockStock(context.Background(), itemID)
+		require.NoError(t, err)
+
+		assert.Equal(t, itemID, item.ID)
+		assert.Equal(t, 5, item.Stock)
+		assert.True(t, item.IsLimited)
+	})
+
+	t.Run("error - item not found", func(t *testing.T) {
+		truncate(db, t)
+
+		repo := postgres.NewItemsRepository(db)
+		_, err := repo.LockStock(context.Background(), uuid.New())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, queuedomain.ErrItemNotFound)
 	})
 }
