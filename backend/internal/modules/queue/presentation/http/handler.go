@@ -49,12 +49,12 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 
 func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		productID, userID, ok := queueIDs(w, r)
+		itemID, userID, ok := queueIDs(w, r)
 		if !ok {
 			return
 		}
 
-		response, err := usecase.QuitQueue(r.Context(), dto.NewQuitQueueRequest(productID, userID))
+		response, err := usecase.QuitQueue(r.Context(), itemID, userID)
 		if err != nil {
 			if errors.Is(err, domain.ErrQueueNotFound) {
 				http.Error(w, err.Error(), http.StatusNotFound)
@@ -72,9 +72,9 @@ func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
 }
 
 func queueIDs(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
+	itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 	if err != nil {
-		http.Error(w, "invalid product id", http.StatusBadRequest)
+		http.Error(w, "invalid item id", http.StatusBadRequest)
 
 		return uuid.Nil, uuid.Nil, false
 	}
@@ -86,5 +86,5 @@ func queueIDs(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, boo
 		return uuid.Nil, uuid.Nil, false
 	}
 
-	return productID, userID, true
+	return itemID, userID, true
 }

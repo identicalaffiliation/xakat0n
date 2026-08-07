@@ -144,7 +144,7 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		_, err := repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
 
-		actual, err := repo.QuitQueue(ctx, expected.ProductID, expected.UserID, ttl)
+		actual, err := repo.QuitQueue(ctx, expected.ProductID, expected.UserID)
 		require.NoError(t, err)
 		require.NotNil(t, actual)
 
@@ -178,7 +178,7 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, promoted)
 
-		cancelled, err := repo.QuitQueue(ctx, productID, first.UserID, ttl)
+		cancelled, err := repo.QuitQueue(ctx, productID, first.UserID)
 		require.NoError(t, err)
 		require.NotNil(t, cancelled)
 		assert.Equal(t, domain.QueueStatusCancelled, cancelled.Status)
@@ -201,7 +201,7 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
 
-		actual, err := repo.QuitQueue(ctx, uuid.New(), uuid.New(), ttl)
+		actual, err := repo.QuitQueue(ctx, uuid.New(), uuid.New())
 
 		require.Error(t, err)
 		assert.ErrorIs(t, err, domain.ErrQueueNotFound)

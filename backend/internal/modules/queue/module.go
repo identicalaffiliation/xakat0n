@@ -28,18 +28,19 @@ func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.
 
 	return &Module{
 		createUsecase: application.NewCreateQueueUsecase(repo, txManager, logger, ttl),
-		quitUsecase:   application.NewQuitQueueUsecase(repo, txManager, logger, ttl),
+		quitUsecase:   application.NewQuitQueueUsecase(repo, advanceUsecase, txManager, logger, ttl),
 		getMeUsecase:  application.NewGetMyTicketUsecase(advanceUsecase, repo, logger, ttl),
 	}
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	route := fmt.Sprintf("/api/v1/products/{%s}/queue", httpapi.ItemIdMuxPattern)
+	route := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
 	r.With(httpx.SessionAuth).Post(route, httpapi.PutUserInQueue(m.createUsecase))
 	r.With(httpx.SessionAuth).Delete(route+"/me", httpapi.QuitQueue(m.quitUsecase))
-	createRoute := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
+
+	createRoute := fmt.Sprintf(route+"/{%s}/queue", httpapi.ItemIdMuxPattern)
 	r.With(httpx.SessionAuth).Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
 
-	getMeRoute := fmt.Sprintf("/api/v1/items/{%s}/queue/me", httpapi.ItemIdMuxPattern)
+	getMeRoute := fmt.Sprintf(route+"/{%s}/queue/me", httpapi.ItemIdMuxPattern)
 	r.With(httpx.SessionAuth).Get(getMeRoute, httpapi.GetMyTicket(m.getMeUsecase))
 }
