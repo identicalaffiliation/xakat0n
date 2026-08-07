@@ -36,7 +36,20 @@ services:
         condition: service_healthy
     networks:
       - xakat0n
-
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_started 
+    networks:
+      - xakat0n
+    environment:
+      - VITE_API_URL=http://backend:8080
+    restart: unless-stopped
   migrator:
     build:
       context: ./migrator
