@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	authModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth"
 	itemsModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/application"
 	postgres2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
@@ -49,10 +50,7 @@ func main() {
 	txManager := tx.NewManager(pool, slogger)
 
 	items := itemsModule.New(pool, slogger)
-
-	router := httpserver.NewRouter()
-	queue.RegisterRoutes(router)
-	items.RegisterRoutes(router)
+	queue := queueModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
 
 	application.AddSeedData(context.Background(), postgres2.NewItemsRepository(pool), slogger)
 	auth, err := authModule.New(cfg.JWTConfig.PrivateKeyPath)
@@ -62,10 +60,10 @@ func main() {
 		)
 		return
 	}
-	queueModule := queue.New(pool, txManager, slogger, time.Second*3)
 
 	router := httpserver.NewRouter()
 	queue.RegisterRoutes(router)
+	items.RegisterRoutes(router)
 	auth.RegisterRoutes(router)
 
 	server := httpserver.New(&cfg.ServerConfig, router)
