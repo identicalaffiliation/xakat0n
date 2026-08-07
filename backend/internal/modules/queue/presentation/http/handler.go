@@ -13,11 +13,19 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
 
-const ProductIdMuxPattern = "productId"
+const (
+	ItemIdMuxPattern = "itemId"
+)
 
 func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		productID, userID, ok := queueIDs(w, r)
+		productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
+		if err != nil {
+			http.Error(w, "invalid product id", http.StatusBadRequest)
+			return
+		}
+
+		userID, ok := httpx.UserID(r.Context())
 		if !ok {
 			return
 		}
@@ -64,7 +72,7 @@ func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
 }
 
 func queueIDs(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	productID, err := uuid.Parse(chi.URLParam(r, ProductIdMuxPattern))
+	productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 	if err != nil {
 		http.Error(w, "invalid product id", http.StatusBadRequest)
 

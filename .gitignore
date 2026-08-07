@@ -31,3 +31,47 @@ go.work.sum
 # Editor/IDE
 .idea/
 # .vscode/
+
+<<<<<<< HEAD
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+*.local
+.env
+.env.local
+.env.*.local
+
+
+*.tsbuildinfo
+
+
+
+logs/
+*.log
+
+docker-compose.override.yml
+.dockerignore
+*.pid
+
+
+
+tmp/
+temp/
+*.tmp
+*.temp
+
+coverage/
+.nyc_output/
+.eslintcache
+.prettiercache
+
+*.pid
+*.seed
+*.pid.lock
+
+backend/keys/*
+
