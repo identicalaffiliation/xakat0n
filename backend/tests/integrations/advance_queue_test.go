@@ -73,7 +73,7 @@ func TestAdvanceQueueUsecase_NFR1_Atomicity(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				_, err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
+				err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
 				errs <- err
 			}()
 		}
@@ -103,7 +103,7 @@ func TestAdvanceQueueUsecase_NFR1_Atomicity(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				_, err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
+				err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
 				errs <- err
 			}()
 		}
@@ -145,7 +145,7 @@ func TestAdvanceQueueUsecase_ExpireAndPromoteInSingleCall(t *testing.T) {
 	seedTicket(t, next, itemID, uuid.New(), domain.QueueStatusQueued, now, nil)
 
 	usecase := newAdvanceQueueUsecase()
-	_, err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
+	err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
 	require.NoError(t, err)
 
 	assert.Equal(t, domain.QueueStatusExpired, ticketStatus(t, expiredOffered))
@@ -162,7 +162,7 @@ func TestAdvanceQueueUsecase_SoldOut(t *testing.T) {
 	ids := seedQueuedBatch(t, itemID, 3)
 
 	usecase := newAdvanceQueueUsecase()
-	_, err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
+	err := usecase.AdvanceQueue(context.Background(), itemID, 3*time.Second)
 	require.NoError(t, err)
 
 	for _, id := range ids {
@@ -180,13 +180,13 @@ func TestAdvanceQueueUsecase_Idempotent(t *testing.T) {
 	usecase := newAdvanceQueueUsecase()
 	ctx := context.Background()
 
-	_, err := usecase.AdvanceQueue(ctx, itemID, 3*time.Second)
+	err := usecase.AdvanceQueue(ctx, itemID, 3*time.Second)
 	require.NoError(t, err)
 
 	offeredAfterFirst := countTicketsByStatus(t, itemID, domain.QueueStatusOffered)
 	queuedAfterFirst := countTicketsByStatus(t, itemID, domain.QueueStatusQueued)
 
-	_, err = usecase.AdvanceQueue(ctx, itemID, 3*time.Second)
+	err = usecase.AdvanceQueue(ctx, itemID, 3*time.Second)
 	require.NoError(t, err)
 
 	assert.Equal(t, offeredAfterFirst, countTicketsByStatus(t, itemID, domain.QueueStatusOffered))
@@ -197,7 +197,7 @@ func TestAdvanceQueueUsecase_ItemNotFound(t *testing.T) {
 	truncate(db, t)
 
 	usecase := newAdvanceQueueUsecase()
-	_, err := usecase.AdvanceQueue(context.Background(), uuid.New(), 3*time.Second)
+	err := usecase.AdvanceQueue(context.Background(), uuid.New(), 3*time.Second)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, domain.ErrItemNotFound)
 }

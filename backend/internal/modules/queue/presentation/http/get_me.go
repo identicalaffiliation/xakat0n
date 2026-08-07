@@ -12,8 +12,6 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
 
-const ItemIdMuxPattern = "itemId"
-
 func GetMyTicket(usecase ports.GetMeUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))

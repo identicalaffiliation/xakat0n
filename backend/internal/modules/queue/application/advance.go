@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 )
 
@@ -36,12 +35,13 @@ func NewAdvanceQueueUsecase(
 // и завершает очередь SOLD_OUT, если весь сток выкуплен. Целиком выполняется
 // в одной транзакции; блокировка строки items — первая операция транзакции
 // (единый порядок блокировок, см. architecture.md).
-func (u *AdvanceQueueUsecase) AdvanceQueue(ctx context.Context, itemID uuid.UUID, ttl time.Duration) (*domain.Item, error) {
-	var item *domain.Item
-
+//
+// Не возвращает *domain.Item: значение из этой (уже закоммиченной к моменту
+// возврата) транзакции нельзя переиспользовать в последующей — каждая
+// транзакция, трогающая items, обязана брать собственный LockStock.
+func (u *AdvanceQueueUsecase) AdvanceQueue(ctx context.Context, itemID uuid.UUID, ttl time.Duration) error {
 	err := u.txManager.WithTx(ctx, func(ctx context.Context) error {
-		var err error
-		item, err = u.items.LockStock(ctx, itemID)
+		item, err := u.items.LockStock(ctx, itemID)
 		if err != nil {
 			return err
 		}
@@ -69,8 +69,8 @@ func (u *AdvanceQueueUsecase) AdvanceQueue(ctx context.Context, itemID uuid.UUID
 			"item_id", itemID,
 			"error", err,
 		)
-		return nil, err
+		return err
 	}
 
-	return item, nil
+	return nil
 }

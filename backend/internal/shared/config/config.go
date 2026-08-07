@@ -5,10 +5,11 @@ import "time"
 type (
 	APIConfig struct {
 		ShutdownTimeout time.Duration  `yaml:"shutdown_timeout"`
+		CheckoutTimer   time.Duration  `yaml:"checkout_timer"`
 		LoggerConfig    LoggerConfig   `yaml:"logger"`
 		PostgresConfig  PostgresConfig `yaml:"postgres"`
 		ServerConfig    ServerConfig   `yaml:"server"`
-		QueueConfig     QueueConfig    `yaml:"queue"`
+		JWTConfig       JWTConfig      `yaml:"jwt"`
 	}
 
 	LoggerConfig struct {
@@ -30,7 +31,12 @@ type (
 		IddleTimeout time.Duration `yaml:"iddle_timeout"`
 	}
 
-	QueueConfig struct {
-		PurchaseWindow time.Duration `yaml:"purchase_window"`
+	JWTConfig struct {
+		PrivateKeyPath string        `yaml:"private_key_path" env:"JWT_PRIVATE_KEY_PATH"`
+		PublicKeyPath  string        `yaml:"public_key_path" env:"JWT_PUBLIC_KEY_PATH"`
+		Issuer         string        `yaml:"issuer"`
+		Audience       string        `yaml:"audience"`
+		KeyID          string        `yaml:"key_id"`
+		TTL            time.Duration `yaml:"ttl"`
 	}
 )

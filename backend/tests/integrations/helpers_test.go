@@ -14,6 +14,37 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
+// seedItem вставляет строку items напрямую SQL — под явно заданные stock/is_limited,
+// которых нет в конструкторе каталожного domain.NewItem (internal/modules/items).
+func seedItem(t *testing.T, itemID uuid.UUID, stock int) {
+	t.Helper()
+
+	_, err := db.Exec(
+		context.Background(),
+		`INSERT INTO items (id, title, price, is_limited, stock) VALUES ($1, 'test item', 100, true, $2)`,
+		itemID,
+		stock,
+	)
+	require.NoError(t, err)
+}
+
+// ensureItem гарантирует наличие строки items под productID — начиная с миграции,
+// добавившей queues.product_id REFERENCES items(id), INSERT в queues без существующего
+// item бьётся об FK. Идемпотентно (ON CONFLICT DO NOTHING): если тест уже вызвал seedItem
+// с нужным stock, эта строка не трогается; если нет (репозиторным тестам queues stock не
+// важен) — подставляется безобидная заглушка.
+func ensureItem(t *testing.T, itemID uuid.UUID) {
+	t.Helper()
+
+	_, err := db.Exec(
+		context.Background(),
+		`INSERT INTO items (id, title, price, is_limited, stock) VALUES ($1, 'test item', 100, true, 1000)
+		 ON CONFLICT (id) DO NOTHING`,
+		itemID,
+	)
+	require.NoError(t, err)
+}
+
 // seedTicket вставляет строку queues напрямую SQL — минуя QueueRepository.CreateQueue,
 // чтобы контролировать created_at/status/expires_at, которые репозиторий не позволяет
 // задать явно (нужно для детерминированного порядка FIFO и для тестовых терминальных
@@ -26,6 +57,8 @@ func seedTicket(
 	expiresAt *time.Time,
 ) {
 	t.Helper()
+
+	ensureItem(t, productID)
 
 	_, err := db.Exec(
 		context.Background(),

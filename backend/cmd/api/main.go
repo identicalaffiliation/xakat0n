@@ -10,7 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue"
+	authModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth"
+	itemsModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/application"
+	postgres2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
+	queueModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/config"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpserver"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/logger"
@@ -45,10 +49,22 @@ func main() {
 
 	txManager := tx.NewManager(pool, slogger)
 
-	queueModule := queue.New(pool, txManager, slogger, cfg.QueueConfig.PurchaseWindow)
+	items := itemsModule.New(pool, slogger)
+	queue := queueModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
+
+	application.AddSeedData(context.Background(), postgres2.NewItemsRepository(pool), slogger)
+	auth, err := authModule.New(cfg.JWTConfig.PrivateKeyPath)
+	if err != nil {
+		slogger.Error(
+			"error", err,
+		)
+		return
+	}
 
 	router := httpserver.NewRouter()
-	queueModule.RegisterRoutes(router)
+	queue.RegisterRoutes(router)
+	items.RegisterRoutes(router)
+	auth.RegisterRoutes(router)
 
 	server := httpserver.New(&cfg.ServerConfig, router)
 	notifyChan := make(chan os.Signal, 1)

@@ -34,7 +34,7 @@ func NewGetMyTicketUsecase(
 }
 
 func (u *GetMyTicketUsecase) GetMyTicket(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error) {
-	if _, err := u.advance.AdvanceQueue(ctx, itemID, u.ttl); err != nil {
+	if err := u.advance.AdvanceQueue(ctx, itemID, u.ttl); err != nil {
 		if errors.Is(err, domain.ErrItemNotFound) {
 			// Контракт GET /queue/me отдельного 404 под "товар не найден" не
 			// определяет — только TicketNotFound. Раз товара нет, заявки по

@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
 )
 
@@ -19,7 +18,7 @@ type CreateUsecase interface {
 // сможет переиспользовать любой другой вызывающий (например, POST /queue)
 // со своим собственным TTL, не наследуя чужую конфигурацию.
 type AdvanceUsecase interface {
-	AdvanceQueue(ctx context.Context, itemID uuid.UUID, ttl time.Duration) (*domain.Item, error)
+	AdvanceQueue(ctx context.Context, itemID uuid.UUID, ttl time.Duration) error
 }
 
 type GetMeUsecase interface {

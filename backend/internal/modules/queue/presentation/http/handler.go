@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	ProductIdMuxPattern = "productId"
+	ItemIdMuxPattern = "itemId"
 )
 
 func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		productID, err := uuid.Parse(chi.URLParam(r, ProductIdMuxPattern))
+		productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
 			http.Error(w, "invalid product id", http.StatusBadRequest)
 			return
