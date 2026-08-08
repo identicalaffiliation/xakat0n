@@ -13,7 +13,6 @@ import (
 	queueapplication "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/application"
 	queuepostgres "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 	queueports "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
 )
 
@@ -38,8 +37,8 @@ func New(pool tx.DBTX, txManager queueports.TxManager, logger ports.Logger, ttl 
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	checkoutRoute := fmt.Sprintf("/api/v1/items/{%s}/checkout", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Post(checkoutRoute, httpapi.StartCheckout(m.checkoutUsecase))
+	r.Post(checkoutRoute, httpapi.StartCheckout(m.checkoutUsecase))
 
 	callbackRoute := fmt.Sprintf("/api/v1/items/{%s}/payment/callback", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Post(callbackRoute, httpapi.PaymentCallback(m.paymentUsecase))
+	r.Post(callbackRoute, httpapi.PaymentCallback(m.paymentUsecase))
 }
