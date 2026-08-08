@@ -21,29 +21,31 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
-			http.Error(w, "invalid product id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
 		}
 
 		userID, ok := httpx.UserID(r.Context())
 		if !ok {
+			httpx.WriteError(w, http.StatusUnauthorized, "unauthorized", "invalid user id")
 			return
 		}
 
 		response, err := usecase.CreateQueue(r.Context(), dto.NewCreateRequest(productID, userID))
 		if err != nil {
-			if errors.Is(err, domain.ErrUserAlreadyQueued) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-
-				return
+			switch {
+			case errors.Is(err, domain.ErrQueueNotApplicable),
+				errors.Is(err, domain.ErrItemSoldOut):
+				httpx.WriteError(w, http.StatusConflict, "queue_not_applicable", "queue not applicable")
+			case errors.Is(err, domain.ErrItemNotFound):
+				httpx.WriteError(w, http.StatusNotFound, "item_not_found", "item not found")
+			default:
+				httpx.WriteError(w, http.StatusInternalServerError, "internal_server_error", "internal server error")
 			}
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-
 			return
 		}
 
-		httpx.EncodeJSON(w, response, http.StatusCreated)
+		httpx.EncodeJSON(w, response, http.StatusOK)
 	}
 }
 

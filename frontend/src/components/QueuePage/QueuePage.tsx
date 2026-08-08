@@ -147,14 +147,22 @@ const QueuePage: React.FC = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Товар</Typography><Typography sx={{ fontWeight: 500 }}>{product.title}</Typography></Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Количество</Typography><Typography sx={{ fontWeight: 500 }}>1 шт.</Typography></Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}><Typography>Стоимость</Typography><Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>{product.price.toLocaleString()} ₽</Typography></Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ textAlign: 'center', mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">Осталось времени для оплаты</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
-                        <CircularProgress variant="determinate" value={((timer || 0) / 120) * 100} size={64} />
-                        <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '2.5rem' }}>{formatTime(timer || 0)}</Typography>
-                      </Box>
-                    </Box>
+                    {state.isLimited && (
+                      <>
+                        <Divider sx={{ my: 2 }} />
+                        <Box sx={{ textAlign: 'center', mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Осталось времени для оплаты
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
+                            <CircularProgress variant="determinate" value={((timer || 0) / 120) * 100} size={64} />
+                            <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '2.5rem' }}>
+                              {formatTime(timer || 0)}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </>
+                    )}
                     <Divider sx={{ my: 2 }} />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, backgroundColor: '#fff' }}><Typography variant="caption" color="text.secondary">Промокод</Typography><Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography></Paper>

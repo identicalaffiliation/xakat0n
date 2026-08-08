@@ -10,7 +10,7 @@ import (
 )
 
 type CreateUsecase interface {
-	CreateQueue(ctx context.Context, in *dto.CreateQueueRequest) (*dto.QueueResponse, error)
+	CreateQueue(ctx context.Context, in *dto.CreateQueueRequest) (*dto.Ticket, error)
 }
 
 type QuitUsecase interface {

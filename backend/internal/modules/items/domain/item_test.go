@@ -7,5 +7,5 @@ import (
 )
 
 func TestNewItem(t *testing.T) {
-	require.NotNil(t, NewItem("a", "b", 1))
+	require.NotNil(t, NewItem("a", "b", 1, true))
 }

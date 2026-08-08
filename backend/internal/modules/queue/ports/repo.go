@@ -24,6 +24,8 @@ type QueueRepository interface {
 	PromoteNext(ctx context.Context, productID uuid.UUID, freeSlots int, ttl time.Duration) (int64, error)
 	MarkSoldOut(ctx context.Context, productID uuid.UUID, stock int) error
 
+	IsSoldOut(ctx context.Context, productID uuid.UUID, stock int) (bool, error)
+	GetActiveTicket(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error)
 	GetLatestTicket(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error)
 	CountQueuedAhead(ctx context.Context, productID uuid.UUID, createdAt time.Time) (int, error)
 	NextSlotFreeAt(ctx context.Context, productID uuid.UUID) (*time.Time, error)

@@ -368,7 +368,6 @@ services:
       DATABASE_URL: postgres://app:app@postgres:5432/avito_queue?sslmode=disable
       PURCHASE_WINDOW: 90s      # единое окно права; прод — 10-15 минут,
                                 # должно вмещать саму оплату
-      PAYMENT_RETRY_COOLDOWN: 2s
     depends_on:
       postgres:
         condition: service_healthy
