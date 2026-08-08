@@ -23,5 +23,6 @@ func NewItem(title, desscription string, price int64, isLimited bool) *Item {
 		Description: desscription,
 		Price:       price,
 		IsLimited:   isLimited,
+		Stock:       1,
 	}
 }

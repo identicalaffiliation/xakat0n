@@ -14,6 +14,7 @@ func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger po
 			"failed to get all items",
 			"error", err,
 		)
+		return
 	}
 
 	if len(all) != 0 {
@@ -21,11 +22,46 @@ func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger po
 	}
 
 	items := []*domain.Item{
-		domain.NewItem("Iphone 16 Pro", "Simple and strong", 80000, true),
-		domain.NewItem("Компьютерный стол", "Ширина, Высота", 15000, true),
-		domain.NewItem("Футбольный мяч", "Хорошее состояние", 1500, false),
-		domain.NewItem("Трулик", "10/10", 2500, true),
-		domain.NewItem("Аренда помещения под кебаб", "your best kebab place", 50000, false),
+		newSeedItem(
+			"iPhone 16 Pro",
+			"Флагманский смартфон Apple с титановым корпусом и экраном 6,3 дюйма.",
+			80000,
+			"Электроника",
+			true,
+			1,
+		),
+		newSeedItem(
+			"Компьютерный стол",
+			"Письменный стол с широкой столешницей и отделением для системного блока.",
+			15000,
+			"Мебель",
+			true,
+			3,
+		),
+		newSeedItem(
+			"Футбольный мяч",
+			"Тренировочный футбольный мяч стандартного пятого размера.",
+			1500,
+			"Спорт",
+			false,
+			20,
+		),
+		newSeedItem(
+			"Турник настенный",
+			"Стальной настенный турник для домашних тренировок, допустимая нагрузка до 150 кг.",
+			2500,
+			"Спорт",
+			true,
+			5,
+		),
+		newSeedItem(
+			"Аренда помещения под кебаб",
+			"Помещение с отдельным входом и вытяжкой, подготовленное для точки общественного питания.",
+			50000,
+			"Недвижимость",
+			false,
+			1,
+		),
 	}
 
 	for _, item := range items {
@@ -37,4 +73,19 @@ func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger po
 			)
 		}
 	}
+}
+
+func newSeedItem(
+	title string,
+	description string,
+	price int64,
+	category string,
+	isLimited bool,
+	stock int,
+) *domain.Item {
+	item := domain.NewItem(title, description, price, isLimited)
+	item.Category = &category
+	item.Stock = stock
+
+	return item
 }
