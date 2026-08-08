@@ -33,15 +33,24 @@ func (s *quitUsecaseStub) QuitQueue(_ context.Context, itemID, userID uuid.UUID)
 	return s.response, s.err
 }
 
-func quitRouter(usecase *quitUsecaseStub) http.Handler {
+type quitTokenVerifierStub struct {
+	userID uuid.UUID
+}
+
+func (s quitTokenVerifierStub) Verify(string) (uuid.UUID, error) {
+	return s.userID, nil
+}
+
+func quitRouter(usecase *quitUsecaseStub, userID uuid.UUID) http.Handler {
 	router := chi.NewRouter()
-	router.With(httpx.SessionAuth).Delete("/api/v1/items/{itemId}/queue/me", QuitQueue(usecase))
+	router.With(httpx.JWTAuth(quitTokenVerifierStub{userID: userID})).
+		Delete("/api/v1/items/{itemId}/queue/me", QuitQueue(usecase))
 	return router
 }
 
-func quitRequest(itemID string, userID uuid.UUID) *http.Request {
+func quitRequest(itemID string) *http.Request {
 	request := httptest.NewRequest(http.MethodDelete, "/api/v1/items/"+itemID+"/queue/me", nil)
-	request.Header.Set("X-User-ID", userID.String())
+	request.Header.Set("Authorization", "Bearer test-token")
 	return request
 }
 
@@ -56,7 +65,7 @@ func TestQuitQueueHandler_Success(t *testing.T) {
 	}, time.Now())}
 	recorder := httptest.NewRecorder()
 
-	quitRouter(usecase).ServeHTTP(recorder, quitRequest(itemID.String(), userID))
+	quitRouter(usecase, userID).ServeHTTP(recorder, quitRequest(itemID.String()))
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
@@ -70,7 +79,7 @@ func TestQuitQueueHandler_InvalidItemID(t *testing.T) {
 	usecase := &quitUsecaseStub{}
 	recorder := httptest.NewRecorder()
 
-	quitRouter(usecase).ServeHTTP(recorder, quitRequest("not-a-uuid", uuid.New()))
+	quitRouter(usecase, uuid.New()).ServeHTTP(recorder, quitRequest("not-a-uuid"))
 
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
 	assert.False(t, usecase.called)
@@ -81,7 +90,7 @@ func TestQuitQueueHandler_Unauthorized(t *testing.T) {
 	request := httptest.NewRequest(http.MethodDelete, "/api/v1/items/"+uuid.NewString()+"/queue/me", nil)
 	recorder := httptest.NewRecorder()
 
-	quitRouter(usecase).ServeHTTP(recorder, request)
+	quitRouter(usecase, uuid.New()).ServeHTTP(recorder, request)
 
 	assert.Equal(t, http.StatusUnauthorized, recorder.Code)
 	assert.False(t, usecase.called)
@@ -102,7 +111,7 @@ func TestQuitQueueHandler_UsecaseErrors(t *testing.T) {
 			usecase := &quitUsecaseStub{err: test.err}
 			recorder := httptest.NewRecorder()
 
-			quitRouter(usecase).ServeHTTP(recorder, quitRequest(uuid.NewString(), uuid.New()))
+			quitRouter(usecase, uuid.New()).ServeHTTP(recorder, quitRequest(uuid.NewString()))
 
 			assert.Equal(t, test.statusCode, recorder.Code)
 			require.True(t, usecase.called)
