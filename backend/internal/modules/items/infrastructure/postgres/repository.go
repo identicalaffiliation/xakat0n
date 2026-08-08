@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	checkoutdomain "github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
 	queuedomain "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
@@ -98,6 +99,23 @@ func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) 
 	}
 
 	return &item, nil
+}
+
+// IsLimited — реализует checkout/ports.ItemsRepository, без FOR UPDATE в отличие от LockStock.
+func (repo *ItemsRepository) IsLimited(ctx context.Context, itemID uuid.UUID) (bool, error) {
+	const query = `SELECT is_limited FROM items WHERE id = $1`
+
+	var isLimited bool
+	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID).Scan(&isLimited)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, checkoutdomain.ErrItemNotFound
+		}
+
+		return false, fmt.Errorf("is limited: %w", err)
+	}
+
+	return isLimited, nil
 }
 
 // LockStock — узкое чтение для queue-модуля: реализует queue/ports.ItemsRepository.

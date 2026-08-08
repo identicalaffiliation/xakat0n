@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	authModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth"
+	checkoutModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout"
 	itemsModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/application"
 	postgres2 "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/infrastructure/postgres"
@@ -51,6 +52,7 @@ func main() {
 
 	items := itemsModule.New(pool, slogger)
 	queue := queueModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
+	checkout := checkoutModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
 
 	application.AddSeedData(context.Background(), postgres2.NewItemsRepository(pool), slogger)
 	auth, err := authModule.New(cfg.JWTConfig.PrivateKeyPath)
@@ -65,6 +67,7 @@ func main() {
 	queue.RegisterRoutes(router)
 	items.RegisterRoutes(router)
 	auth.RegisterRoutes(router)
+	checkout.RegisterRoutes(router)
 
 	server := httpserver.New(&cfg.ServerConfig, router)
 	notifyChan := make(chan os.Signal, 1)
