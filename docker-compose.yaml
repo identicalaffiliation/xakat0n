@@ -74,7 +74,7 @@ services:
       - "--httpListenAddr=:8428"
       - "--promscrape.config=/etc/promscrape.yml"
     ports:
-      - "8428:8428"
+      - "${VICTORIA_METRICS_PORT:-8428}:8428"
     restart: unless-stopped
     networks:
       - xakat0n
