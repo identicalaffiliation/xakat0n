@@ -17,3 +17,9 @@ type ItemsRepository interface {
 	GetAll(ctx context.Context) ([]*domain.Item, error)
 	GetItemByID(ctx context.Context, itemID uuid.UUID) (*domain.Item, error)
 }
+
+// SoldOutChecker — реализуется queue-модулем (queues — его таблица), items
+// сам её не запрашивает и только сравнивает результат со Stock.
+type SoldOutChecker interface {
+	CountPurchased(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]int, error)
+}
