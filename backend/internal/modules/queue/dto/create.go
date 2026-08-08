@@ -1,8 +1,6 @@
 package dto
 
-import (
-	"github.com/google/uuid"
-)
+import "github.com/google/uuid"
 
 type CreateQueueRequest struct {
 	ProductID uuid.UUID `json:"productId" validate:"required"`

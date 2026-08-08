@@ -17,6 +17,8 @@ type QueueRepository interface {
 	CreateQueue(ctx context.Context, queue *domain.Queue) (*domain.Queue, error)
 	TryPromoteUser(ctx context.Context, queueID, productID uuid.UUID, ttl time.Duration) (bool, *time.Time, error)
 
+	QuitQueue(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error)
+
 	ExpireStale(ctx context.Context, productID uuid.UUID) error
 	CountTaken(ctx context.Context, productID uuid.UUID) (int, error)
 	PromoteNext(ctx context.Context, productID uuid.UUID, freeSlots int, ttl time.Duration) (int64, error)

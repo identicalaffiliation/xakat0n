@@ -14,7 +14,7 @@ interface QueueState {
   queuePosition: number | null;
   totalInQueue: number | null;
   timeLeft: number | null;
-  isLimited: boolean | null; 
+  isLimited: boolean | null;
 }
 
 interface QueueContextType {

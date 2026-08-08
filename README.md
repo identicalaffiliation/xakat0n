@@ -18,6 +18,34 @@ installation:
 task --version
 ```
 
+## Start the application
+
+Start PostgreSQL, apply migrations, and launch the backend:
+
+```sh
+task up
+```
+
+Stop all services while preserving PostgreSQL data:
+
+```sh
+task down
+```
+
+Follow logs from all services:
+
+```sh
+task logs
+```
+
+Follow logs from an individual service:
+
+```sh
+task db:logs
+task migrator:logs
+task backend:logs
+```
+
 ## golangci-lint installation
 
 Install the same golangci-lint version that is used in CI by following the

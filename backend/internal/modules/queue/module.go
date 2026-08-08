@@ -11,12 +11,12 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 	httpapi "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/presentation/http"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
 )
 
 type Module struct {
 	createUsecase ports.CreateUsecase
+	quitUsecase   ports.QuitUsecase
 	getMeUsecase  ports.GetMeUsecase
 }
 
@@ -27,14 +27,16 @@ func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.
 
 	return &Module{
 		createUsecase: application.NewCreateQueueUsecase(advanceUsecase, repo, itemsRepo, txManager, logger, ttl),
+		quitUsecase:   application.NewQuitQueueUsecase(repo, advanceUsecase, txManager, logger, ttl),
 		getMeUsecase:  application.NewGetMyTicketUsecase(advanceUsecase, repo, logger, ttl),
 	}
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	createRoute := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
+	r.Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
 
-	getMeRoute := fmt.Sprintf("/api/v1/items/{%s}/queue/me", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Get(getMeRoute, httpapi.GetMyTicket(m.getMeUsecase))
+	meRoute := fmt.Sprintf("/api/v1/items/{%s}/queue/me", httpapi.ItemIdMuxPattern)
+	r.Delete(meRoute, httpapi.QuitQueue(m.quitUsecase))
+	r.Get(meRoute, httpapi.GetMyTicket(m.getMeUsecase))
 }
