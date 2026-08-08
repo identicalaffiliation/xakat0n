@@ -28,7 +28,7 @@ servers:
     description: Локальный запуск через docker compose
 
 security:
-  - SessionTokenAuth: []
+  - BearerAuth: []
 
 tags:
   - name: auth
@@ -47,9 +47,8 @@ paths:
       summary: Вход по имени пользователя
       description: >
         Если пользователя с таким именем нет — создаётся. Пароля нет:
-        полноценная авторизация вне скоупа. Возвращает sessionToken,
-        который клиент хранит в sessionStorage и передаёт
-        в заголовке X-Session-Token.
+        полноценная авторизация вне скоупа. Возвращает JWT, который
+        клиент передаёт в заголовке Authorization по схеме Bearer.
       security: []
       requestBody:
         required: true
@@ -66,11 +65,11 @@ paths:
                   example: "hunter_42"
       responses:
         '200':
-          description: Пользователь найден или создан, сессия выдана
+          description: Пользователь найден или создан, JWT выдан
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: '#/components/schemas/LoginResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -430,25 +429,19 @@ paths:
 
 components:
   securitySchemes:
-    SessionTokenAuth:
-      type: apiKey
-      in: header
-      name: X-Session-Token
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
       description: >
-        Токен — 32 случайных байта, выдаётся в POST /auth/login
-        и резолвится сервером в userId.
+        JWT выдаётся в POST /auth/login и передаётся в заголовке
+        Authorization в формате Bearer <token>. Токен подписан
+        алгоритмом RS256, заголовок содержит kid. Claims содержат
+        iss, aud, sub с UUID пользователя, username, iat и exp.
 
         Клиент не передаёт userId ни в каком виде: право на покупку
         обязано быть персональным и непередаваемым, а принимаемый
         от клиента идентификатор пользователя обнулил бы эту гарантию.
-
-        Заголовок, а не cookie: несколько одновременно открытых окон
-        инкогнито делят одну сессию кук между собой, и демонстрация
-        с несколькими параллельными покупателями превратилась бы
-        в демонстрацию одного. Клиенту следует хранить токен
-        в sessionStorage — он изолирован между вкладками, в отличие
-        от localStorage, и переживает перезагрузку страницы,
-        в отличие от переменной в памяти.
 
   parameters:
     ItemId:
@@ -467,7 +460,8 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Unauthorized:
-      description: Заголовок X-Session-Token отсутствует или недействителен
+      description: >
+        Bearer JWT отсутствует, повреждён, просрочен или не прошёл проверку
       content:
         application/json:
           schema:
@@ -486,9 +480,9 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
-    Session:
+    LoginResponse:
       type: object
-      required: [userId, username, sessionToken]
+      required: [userId, username, token]
       properties:
         userId:
           type: string
@@ -496,13 +490,15 @@ components:
           description: Для отображения. В запросах не используется.
         username:
           type: string
-        sessionToken:
+        token:
           type: string
-          description: Передаётся в заголовке X-Session-Token
+          description: >
+            JWT для передачи в заголовке Authorization в формате
+            Bearer <token>
       example:
         userId: "b7c1d2e3-0000-0000-0000-000000000001"
         username: "hunter_42"
-        sessionToken: "9pQ3xK7mWv2sT8bH1nR4jL6cY0dF5aZe"
+        token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1vY2sta2V5LTEiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJiN2MxZDJlMy0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJ1c2VybmFtZSI6Imh1bnRlcl80MiJ9.signature"
 
     Item:
       type: object
