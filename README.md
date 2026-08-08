@@ -62,3 +62,10 @@ Verify the installation:
 ```sh
 golangci-lint --version
 ```
+
+
+## metrics
+Dashboard available on: http://localhost:4000
+Grafana data:
+Username: admin
+Login: admin
