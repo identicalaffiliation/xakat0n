@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
+
 	authModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth"
 	authjwt "github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/infrastructure/jwt"
 	itemsModule "github.com/identicalaffiliation/xakat0n/backend/internal/modules/items"

@@ -54,9 +54,8 @@ func (v *Verifier) Verify(tokenString string) (uuid.UUID, error) {
 		golangjwt.WithAudience(v.audience),
 		golangjwt.WithExpirationRequired(),
 	)
-
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+		return uuid.Nil, fmt.Errorf("%w: %w", ErrInvalidToken, err)
 	}
 
 	if !token.Valid {
@@ -65,7 +64,7 @@ func (v *Verifier) Verify(tokenString string) (uuid.UUID, error) {
 
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("%w: %v", ErrInvalidSubject, err)
+		return uuid.Nil, fmt.Errorf("%w: %w", ErrInvalidSubject, err)
 	}
 	return userID, nil
 }
