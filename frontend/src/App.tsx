@@ -5,6 +5,8 @@ import AuthPage from './components/AuthPage/AuthPage';
 import ProductCatalog from './components/ProductCatalog/ProductCatalog';
 import ProductDetail from './components/ProductDetail/ProductDetail';
 import QueuePage from './components/QueuePage/QueuePage';
+import CheckoutPage from './components/CheckoutPage/CheckoutPage';
+
 
 function App() {
   return (
@@ -15,6 +17,7 @@ function App() {
           <Route path="/products" element={<ProductCatalog />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/product/:id/queue" element={<QueuePage />} />
+          <Route path="/product/:id/checkout" element={<CheckoutPage />} />
         </Routes>
         <QueueWidget />
       </QueueProvider>

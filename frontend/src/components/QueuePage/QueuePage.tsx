@@ -23,7 +23,7 @@ const QueuePage: React.FC = () => {
       try {
         const data = await getQueueStatus(id);
         setTicket(data);
-        if (data.expires_in_seconds !== null) setTimer(data.expires_in_seconds);
+        if (data.expiresInSeconds !== null) setTimer(data.expiresInSeconds);
         if (['PURCHASED', 'EXPIRED', 'SOLD_OUT', 'CANCELLED'].includes(data.status)) {
           clearInterval(interval);
         }
@@ -39,11 +39,11 @@ const QueuePage: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (ticket?.expires_in_seconds === null || ticket?.expires_in_seconds === undefined) {
+    if (ticket?.expiresInSeconds === null || ticket?.expiresInSeconds === undefined) {
       setTimer(null);
       return;
     }
-    setTimer(ticket.expires_in_seconds);
+    setTimer(ticket.expiresInSeconds);
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev === null || prev <= 1) {
@@ -54,7 +54,7 @@ const QueuePage: React.FC = () => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [ticket?.expires_in_seconds]);
+  }, [ticket?.expiresInSeconds]);
   useEffect(() => {
     if (!id) return;
     if (ticket && ['QUEUED', 'EXPIRED', 'CANCELLED'].includes(ticket.status)) {
@@ -91,7 +91,7 @@ const QueuePage: React.FC = () => {
     </Container>
   );
 
-  const productImage = `https://picsum.photos/seed/${ticket.item_id}/200/200`;
+  const productImage = `https://picsum.photos/seed/${ticket.itemId}/200/200`;
 
   const renderContent = () => {
     switch (ticket.status) {
@@ -108,7 +108,7 @@ const QueuePage: React.FC = () => {
                       <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                        <Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography>
+                        <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
                       </Box>
                     </Box>
                   </Paper>
@@ -120,12 +120,12 @@ const QueuePage: React.FC = () => {
                     <TextField fullWidth label="ФИО получателя" variant="outlined" size="small" value="Иванов Иван Иванович" sx={{ mb: 2 }} slotProps={{ input: { readOnly: true } }} />
                     <TextField fullWidth label="Контактный телефон" variant="outlined" size="small" value="+7 (999) 123-45-67" slotProps={{ input: { readOnly: true } }} />
                   </Paper>
-                  <Button variant="contained" color="primary" onClick={() => navigate(`/product/${ticket.item_id}`)}>Назад</Button>
+                  <Button variant="contained" color="primary" onClick={() => navigate(`/product/${ticket.itemId}`)}>Назад</Button>
                 </Grid>
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Детали заказа</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Товар</Typography><Typography sx={{ fontWeight: 500 }}>ID {ticket.item_id}</Typography></Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Товар</Typography><Typography sx={{ fontWeight: 500 }}>ID {ticket.itemId}</Typography></Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Количество</Typography><Typography sx={{ fontWeight: 500 }}>1 шт.</Typography></Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}><Typography>Стоимость</Typography><Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>—</Typography></Box>
                     {timer !== null && (
@@ -146,7 +146,7 @@ const QueuePage: React.FC = () => {
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Скидка по карте</Typography><Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography></Paper>
                     </Box>
                     <Button variant="contained" fullWidth sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1, '&:hover': { bgcolor: '#A169F7' } }} onClick={() => alert('Переход к оплате')}>Оплатить</Button>
-                    <Button variant="outlined" color="secondary" fullWidth sx={{ borderWidth: '3px' }} onClick={async () => { await cancelQueue(ticket.item_id); navigate(`/product/${ticket.item_id}`); }}>Отменить заказ</Button>
+                    <Button variant="outlined" color="secondary" fullWidth sx={{ borderWidth: '3px' }} onClick={async () => { await cancelQueue(ticket.itemId); navigate(`/product/${ticket.itemId}`); }}>Отменить заказ</Button>
                   </Paper>
                 </Grid>
               </Grid>
@@ -171,7 +171,7 @@ const QueuePage: React.FC = () => {
                       <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                        <Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography>
+                        <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
                       </Box>
                     </Box>
                   </Paper>
@@ -184,7 +184,7 @@ const QueuePage: React.FC = () => {
                       <Box>
                         <Typography variant="body2" color="text.secondary">Макс. время ожидания</Typography>
                         <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {ticket.next_slot_free_in_seconds ? `${Math.floor(ticket.next_slot_free_in_seconds / 60)} мин` : '~8 мин'}
+                          {ticket.nextSlotFreeInSeconds ? `${Math.floor(ticket.nextSlotFreeInSeconds / 60)} мин` : '~8 мин'}
                         </Typography>
                       </Box>
                     </Box>
@@ -197,7 +197,7 @@ const QueuePage: React.FC = () => {
                   </Paper>
                   <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                     <Button variant="contained" color="primary" onClick={() => navigate('/products')}>Перейти в каталог</Button>
-                    <Button variant="outlined" color="secondary" onClick={async () => { await cancelQueue(ticket.item_id); navigate('/products'); }}>Выйти из очереди</Button>
+                    <Button variant="outlined" color="secondary" onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Выйти из очереди</Button>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 5 }}>
@@ -211,7 +211,7 @@ const QueuePage: React.FC = () => {
                     <Divider sx={{ my: 2 }} />
                     <Typography variant="body1" gutterBottom><strong>Краткая информация</strong></Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Когда подойдёт ваша очередь, вы получите уведомление и сможете перейти к оформлению.</Typography>
-                    <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${ticket.item_id}`)}>Назад к товару</Button>
+                    <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${ticket.itemId}`)}>Назад к товару</Button>
                   </Paper>
                 </Grid>
               </Grid>
@@ -242,14 +242,14 @@ const QueuePage: React.FC = () => {
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 3 }}>
                       <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                      <Box><Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography><Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography></Box>
+                      <Box><Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography><Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography></Box>
                     </Box>
                   </Paper>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#E8F5E9', border: '2px solid #00C853', mb: 3 }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: '#00C853', mb: 1 }}>Товар освободился!</Typography>
                     <Typography variant="body1" sx={{ mb: 2 }}>Вы можете перейти к оформлению заказа. У вас есть {formatTime(timer || 60)} на оплату.</Typography>
-                    <Button variant="contained" color="primary" size="large" onClick={async () => { await startCheckout(ticket.item_id); navigate(`/product/${ticket.item_id}/queue`); }}>Перейти к оформлению</Button>
-                    <Button variant="outlined" color="secondary" sx={{ ml: 2 }} onClick={async () => { await cancelQueue(ticket.item_id); navigate('/products'); }}>Отказаться</Button>
+                    <Button variant="contained" color="primary" size="large" onClick={async () => { await startCheckout(ticket.itemId); navigate(`/product/${ticket.itemId}/queue`); }}>Перейти к оформлению</Button>
+                    <Button variant="outlined" color="secondary" sx={{ ml: 2 }} onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Отказаться</Button>
                   </Paper>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 6, mb: 2 }}>
@@ -260,7 +260,7 @@ const QueuePage: React.FC = () => {
                   </Paper>
                   <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                     <Button variant="contained" color="primary" onClick={() => navigate('/products')}>Перейти в каталог</Button>
-                    <Button variant="outlined" color="secondary" onClick={async () => { await cancelQueue(ticket.item_id); navigate('/products'); }}>Выйти из очереди</Button>
+                    <Button variant="outlined" color="secondary" onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Выйти из очереди</Button>
                   </Box>
                 </Grid>
                 <Grid size={{ xs: 12, md: 5 }}>
@@ -274,7 +274,7 @@ const QueuePage: React.FC = () => {
                     <Divider sx={{ my: 2 }} />
                     <Typography variant="body1" gutterBottom><strong>Краткая информация</strong></Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Вы получили право на покупку! Оплатите в течение {formatTime(timer || 60)}.</Typography>
-                    <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${ticket.item_id}`)}>Назад к товару</Button>
+                    <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${ticket.itemId}`)}>Назад к товару</Button>
                   </Paper>
                 </Grid>
               </Grid>
@@ -296,7 +296,7 @@ const QueuePage: React.FC = () => {
                         <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                         <Box>
                           <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                          <Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography>
+                          <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
                         </Box>
                       </Box>
                     </Paper>
@@ -336,7 +336,7 @@ const QueuePage: React.FC = () => {
                         fullWidth
                         sx={{ py: 1.5 }}
                         onClick={() => {
-                          navigate(`/product/${ticket.item_id}`);
+                          navigate(`/product/${ticket.itemId}`);
                         }}
                       >
                         Встать в очередь
@@ -377,7 +377,7 @@ const QueuePage: React.FC = () => {
                           <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                           <Box>
                             <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                            <Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography>
+                            <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
                           </Box>
                         </Box>
                       </Paper>
@@ -402,7 +402,7 @@ const QueuePage: React.FC = () => {
                           color="primary"
                           fullWidth
                           sx={{ py: 1.5 }}
-                          onClick={() => navigate(`/product/${ticket.item_id}`)}
+                          onClick={() => navigate(`/product/${ticket.itemId}`)}
                         >
                           Встать в очередь
                         </Button>
@@ -442,7 +442,7 @@ const QueuePage: React.FC = () => {
                             <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                             <Box>
                               <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                              <Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography>
+                              <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
                             </Box>
                           </Box>
                         </Paper>
@@ -504,7 +504,7 @@ const QueuePage: React.FC = () => {
                               <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                               <Box>
                                 <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                                <Typography variant="body2" color="text.secondary">ID: {ticket.item_id}</Typography>
+                                <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
                               </Box>
                             </Box>
                           </Paper>
