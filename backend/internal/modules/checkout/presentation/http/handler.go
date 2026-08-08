@@ -38,7 +38,7 @@ func StartCheckout(usecase ports.CheckoutUsecase) http.HandlerFunc {
 			case errors.Is(err, domain.ErrItemNotFound):
 				httpx.WriteError(w, http.StatusNotFound, "item_not_found", "item not found")
 			case errors.Is(err, domain.ErrNoActiveRight):
-				httpx.WriteError(w, http.StatusForbidden, "no_active_right", "у вас нет активного права на покупку этого товара")
+				httpx.WriteError(w, http.StatusForbidden, "no_active_right", "you have no active right to purchase this item")
 			default:
 				httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
 			}
@@ -73,9 +73,9 @@ func PaymentCallback(usecase ports.PaymentCallbackUsecase) http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrTicketNotFound):
-				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "у пользователя нет заявки по этому товару")
+				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "user has no ticket for this item")
 			case errors.Is(err, domain.ErrTooLate):
-				httpx.WriteError(w, http.StatusConflict, "checkout_result_too_late", "окно уже истекло, единица отдана следующему")
+				httpx.WriteError(w, http.StatusConflict, "checkout_result_too_late", "window already expired, item was given to the next in line")
 			default:
 				httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
 			}

@@ -59,7 +59,12 @@ func main() {
 	checkout := checkoutModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
 
 	application.AddSeedData(context.Background(), postgres2.NewItemsRepository(pool), slogger)
-	auth, err := authModule.New(cfg.JWTConfig.PrivateKeyPath)
+	auth, err := authModule.New(pool, cfg.JWTConfig.PrivateKeyPath, authModule.Config{
+		Issuer:   cfg.JWTConfig.Issuer,
+		Audience: cfg.JWTConfig.Audience,
+		KeyID:    cfg.JWTConfig.KeyID,
+		TTL:      cfg.JWTConfig.TTL,
+	}, slogger)
 	if err != nil {
 		slogger.Error(
 			"error", err,
