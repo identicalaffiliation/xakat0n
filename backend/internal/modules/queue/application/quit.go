@@ -66,5 +66,5 @@ func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UU
 		)
 	}
 
-	return dto.NewTicket(queue, time.Now()), nil
+	return dto.NewTicket(queue, time.Now().UTC()), nil
 }
