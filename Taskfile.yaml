@@ -62,16 +62,16 @@ tasks:
       - task: backend:modules
       - task: backend:check
 
-  db:up:
+  postgres:up:
     desc: Start PostgreSQL and wait until it is ready
     cmds:
       - docker compose up --detach --wait postgres
 
-  db:down:
+  postgres:down:
     desc: Stop PostgreSQL
     cmds:
       - docker compose down
-  db:logs:
+  postgres:logs:
     desc: Follow PostgreSQL logs
     cmds:
       - docker compose logs --follow postgres
