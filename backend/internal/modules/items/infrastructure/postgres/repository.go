@@ -31,11 +31,11 @@ func (repo *ItemsRepository) dbtx(ctx context.Context) tx.DBTX {
 func (repo *ItemsRepository) CreateItem(ctx context.Context, item *domain.Item) error {
 	const query string = `
 			INSERT INTO items
-     	(title, description, price)
-    	VALUES ($1, $2, $3)
+     	(title, description, price, is_limited)
+    	VALUES ($1, $2, $3, $4)
 		`
 
-	if _, err := repo.pool.Exec(ctx, query, item.Title, item.Description, item.Price); err != nil {
+	if _, err := repo.pool.Exec(ctx, query, item.Title, item.Description, item.Price, item.IsLimited); err != nil {
 		return fmt.Errorf("create item: %w", err)
 	}
 

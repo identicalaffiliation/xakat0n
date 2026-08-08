@@ -43,7 +43,7 @@ func NewItemResponse(d *domain.Item) *ItemResponse {
 }
 
 func NewItemsResponse(dms []*domain.Item) *ItemsResponse {
-	var items []ItemResponse
+	items := make([]ItemResponse, 0, len(dms))
 	for _, d := range dms {
 		items = append(items, ItemResponse{
 			Item: Item{

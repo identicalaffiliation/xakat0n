@@ -10,7 +10,7 @@ import (
 )
 
 type CreateUsecase interface {
-	CreateQueue(ctx context.Context, in *dto.CreateQueueRequest) (*dto.CreateQueueResponse, error)
+	CreateQueue(ctx context.Context, in *dto.CreateQueueRequest) (*dto.Ticket, error)
 }
 
 // AdvanceUsecase — переиспользуемый контракт продвижения очереди товара.

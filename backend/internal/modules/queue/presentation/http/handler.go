@@ -34,15 +34,18 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 		rCtx := r.Context()
 		response, err := usecase.CreateQueue(rCtx, dto.NewCreateRequest(productID, userID))
 		if err != nil {
-			if errors.Is(err, domain.ErrUserAlreadyQueued) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
+			switch {
+			case errors.Is(err, domain.ErrQueueNotApplicable),
+				errors.Is(err, domain.ErrItemSoldOut):
+				http.Error(w, err.Error(), http.StatusConflict)
+			case errors.Is(err, domain.ErrItemNotFound):
+				http.Error(w, err.Error(), http.StatusNotFound)
+			default:
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
-
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		httpx.EncodeJSON(w, response, http.StatusCreated)
+		httpx.EncodeJSON(w, response, http.StatusOK)
 	}
 }
