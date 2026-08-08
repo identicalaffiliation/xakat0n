@@ -378,6 +378,14 @@ paths:
         применяется только к статусу CHECKOUT, поэтому дубль ничего
         не найдёт.
 
+        ticketId обязателен: право на покупку не привязано к товару
+        и пользователю навечно — после истечения окна пользователь
+        может встать в очередь заново и получить новый тикет на тот
+        же товар, пока старый уже терминален (EXPIRED), но ещё
+        существует в базе. Без ticketId опоздавшее или задвоенное
+        уведомление о старой попытке нечем было бы отличить от
+        уведомления о новой, и оно применилось бы не к той заявке.
+
         В MVP вызывающая сторона — кнопка страницы-заглушки
         оформления. В проде здесь была бы service-to-service
         авторизация, а userId приходил бы в теле запроса.
@@ -389,8 +397,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [result]
+              required: [ticketId, result]
               properties:
+                ticketId:
+                  type: string
+                  format: uuid
                 result:
                   type: string
                   enum: [paid, failed]
@@ -414,14 +425,6 @@ paths:
             подтверждение опоздало, единица отдана следующему.
             Возврат средств — на стороне платёжного сервиса
             (error: checkout_result_too_late)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '429':
-          description: >
-            Попытки чаще одной в 2 секунды
-            (error: payment_retry_too_soon)
           content:
             application/json:
               schema:
@@ -672,7 +675,6 @@ components:
             - queue_not_applicable
             - item_sold_out
             - checkout_result_too_late
-            - payment_retry_too_soon
         message:
           type: string
           description: Человекочитаемое пояснение, пригодное для показа пользователю

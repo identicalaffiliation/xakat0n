@@ -22,6 +22,7 @@ func TestItemsRepository_CreateItem(t *testing.T) {
 		"test title",
 		"test desc",
 		1000,
+		true,
 	)))
 }
 
@@ -34,6 +35,7 @@ func TestItemsRepository_GetAll(t *testing.T) {
 		"test title",
 		"test desc",
 		1000,
+		true,
 	)
 
 	require.NoError(t, repo.CreateItem(ctx, expected))
@@ -53,7 +55,7 @@ func TestItemsRepository_GetItemByID(t *testing.T) {
 		ctx := context.Background()
 		repo := postgres.NewItemsRepository(db)
 
-		require.NoError(t, repo.CreateItem(ctx, domain.NewItem("a", "b", 1)))
+		require.NoError(t, repo.CreateItem(ctx, domain.NewItem("a", "b", 1, false)))
 		actuals, err := repo.GetAll(ctx)
 		require.NoError(t, err)
 
@@ -75,7 +77,7 @@ func TestItemsRepository_GetItemByID(t *testing.T) {
 		ctx := context.Background()
 		repo := postgres.NewItemsRepository(db)
 
-		require.NoError(t, repo.CreateItem(ctx, domain.NewItem("a", "b", 1)))
+		require.NoError(t, repo.CreateItem(ctx, domain.NewItem("a", "b", 1, false)))
 
 		actual, err := repo.GetItemByID(ctx, uuid.New())
 		require.Error(t, err)

@@ -25,7 +25,7 @@ func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.
 	advanceUsecase := application.NewAdvanceQueueUsecase(itemsRepo, repo, txManager, logger)
 
 	return &Module{
-		createUsecase: application.NewCreateQueueUsecase(repo, txManager, logger, ttl),
+		createUsecase: application.NewCreateQueueUsecase(advanceUsecase, repo, itemsRepo, txManager, logger, ttl),
 		getMeUsecase:  application.NewGetMyTicketUsecase(advanceUsecase, repo, logger, ttl),
 	}
 }

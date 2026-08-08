@@ -11,20 +11,26 @@ import (
 )
 
 type CreateQueueUsecase struct {
+	advance   ports.AdvanceUsecase
 	repo      ports.QueueRepository
+	items     ports.ItemsRepository
 	txManager ports.TxManager
 	logger    ports.Logger
 	ttl       time.Duration
 }
 
 func NewCreateQueueUsecase(
+	advance ports.AdvanceUsecase,
 	repo ports.QueueRepository,
+	items ports.ItemsRepository,
 	manager ports.TxManager,
 	logger ports.Logger,
 	ttl time.Duration,
 ) *CreateQueueUsecase {
 	return &CreateQueueUsecase{
+		advance:   advance,
 		repo:      repo,
+		items:     items,
 		txManager: manager,
 		logger:    logger,
 		ttl:       ttl,
@@ -34,50 +40,145 @@ func NewCreateQueueUsecase(
 func (u *CreateQueueUsecase) CreateQueue(
 	ctx context.Context,
 	in *dto.CreateQueueRequest,
-) (*dto.CreateQueueResponse, error) {
-	var created domain.Queue
-	err := u.txManager.WithTx(ctx, func(ctx context.Context) error {
-		queue, err := u.repo.CreateQueue(
-			ctx,
-			domain.NewQueue(in.ProductID, in.UserID),
-		)
-		if err != nil {
-			u.logger.Error(
-				"failed to create queue",
-				"error", err,
-			)
-			return err
-		}
-
-		promoted, expiredAt, err := u.repo.TryPromoteUser(
-			ctx,
-			queue.ID,
-			queue.ProductID,
-			u.ttl,
-		)
-		if err != nil {
-			return err
-		}
-
-		if promoted {
-			queue.ExpiresAt = expiredAt
-			queue.Status = domain.QueueStatusOffered
-		}
-
-		created = *queue
-		return nil
-	})
-	if err != nil {
-		if errors.Is(err, domain.ErrUserAlreadyQueued) {
-			return nil, domain.ErrUserAlreadyQueued
+) (*dto.Ticket, error) {
+	if err := u.advance.AdvanceQueue(ctx, in.ProductID, u.ttl); err != nil {
+		if errors.Is(err, domain.ErrItemNotFound) {
+			return nil, domain.ErrItemNotFound
 		}
 
 		u.logger.Error(
-			"failed to put user in queue",
+			"failed to advance queue before create",
+			"item_id", in.ProductID,
 			"error", err,
 		)
 		return nil, domain.ErrInternal
 	}
 
-	return dto.NewCreateResponse(&created), nil
+	created, err := u.createQueueTicket(ctx, in)
+	if err != nil {
+		if !errors.Is(err, domain.ErrQueueNotApplicable) &&
+			!errors.Is(err, domain.ErrItemSoldOut) &&
+			!errors.Is(err, domain.ErrItemNotFound) {
+			u.logger.Error(
+				"failed to put user in queue",
+				"item_id", in.ProductID,
+				"user_id", in.UserID,
+				"error", err,
+			)
+		}
+
+		return nil, err
+	}
+
+	return u.buildTicket(ctx, created)
+}
+
+func (u *CreateQueueUsecase) createQueueTicket(
+	ctx context.Context,
+	in *dto.CreateQueueRequest,
+) (domain.Queue, error) {
+	var created domain.Queue
+	err := u.txManager.WithTx(ctx, func(ctx context.Context) error {
+		item, err := u.items.LockStock(ctx, in.ProductID)
+		if err != nil {
+			return err
+		}
+
+		if !item.IsLimited {
+			return domain.ErrQueueNotApplicable
+		}
+
+		soldOut, err := u.repo.IsSoldOut(ctx, in.ProductID, item.Stock)
+		if err != nil {
+			return err
+		}
+		if soldOut {
+			return domain.ErrItemSoldOut
+		}
+
+		existing, err := u.repo.GetActiveTicket(ctx, in.ProductID, in.UserID)
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			created = *existing
+			return nil
+		}
+
+		queue, err := u.repo.CreateQueue(
+			ctx,
+			domain.NewQueue(in.ProductID, in.UserID),
+		)
+		if err != nil {
+			if errors.Is(err, domain.ErrUserAlreadyQueued) {
+				existing, getErr := u.repo.GetActiveTicket(
+					ctx,
+					in.ProductID,
+					in.UserID,
+				)
+				if getErr != nil {
+					return getErr
+				}
+				if existing != nil {
+					created = *existing
+					return nil
+				}
+
+				return domain.ErrItemSoldOut
+			}
+
+			return err
+		}
+
+		taken, err := u.repo.CountTaken(ctx, in.ProductID)
+		if err != nil {
+			return err
+		}
+
+		if taken < item.Stock {
+			promoted, expiresAt, err := u.repo.TryPromoteUser(
+				ctx,
+				queue.ID,
+				in.ProductID,
+				u.ttl,
+			)
+			if err != nil {
+				return err
+			}
+
+			if promoted {
+				queue.Status = domain.QueueStatusOffered
+				queue.ExpiresAt = expiresAt
+			}
+		}
+
+		created = *queue
+		return nil
+	})
+
+	return created, err
+}
+
+func (u *CreateQueueUsecase) buildTicket(ctx context.Context, created domain.Queue) (*dto.Ticket, error) {
+	now := time.Now().UTC()
+	ticket := dto.NewTicket(&created, now)
+
+	if created.Status != domain.QueueStatusQueued {
+		return ticket, nil
+	}
+
+	ahead, err := u.repo.CountQueuedAhead(ctx, created.ProductID, created.CreatedAt)
+	if err != nil {
+		u.logger.Error("failed to count queued ahead", "error", err)
+		return nil, domain.ErrInternal
+	}
+
+	nextFree, err := u.repo.NextSlotFreeAt(ctx, created.ProductID)
+	if err != nil {
+		u.logger.Error("failed to get next slot free at", "error", err)
+		return nil, domain.ErrInternal
+	}
+
+	ticket.SetQueuedFields(ahead, nextFree, now)
+	return ticket, nil
 }

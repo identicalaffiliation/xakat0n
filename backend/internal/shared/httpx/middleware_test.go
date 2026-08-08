@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -100,4 +101,28 @@ func TestJWTAuth_RejectsInvalidToken(t *testing.T) {
 		"message": "JWT повреждён, просрочен или не прошёл проверку"
 	}`, recorder.Body.String())
 	assert.True(t, verifier.called)
+}
+
+func TestUserID(t *testing.T) {
+	t.Parallel()
+
+	t.Run("missing value returns false", func(t *testing.T) {
+		_, ok := UserID(context.Background())
+		assert.False(t, ok)
+	})
+
+	t.Run("wrong type returns false", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), userIDKey{}, "not-a-uuid")
+		_, ok := UserID(ctx)
+		assert.False(t, ok)
+	})
+
+	t.Run("stored uuid is returned", func(t *testing.T) {
+		userID := uuid.New()
+		ctx := context.WithValue(context.Background(), userIDKey{}, userID)
+
+		got, ok := UserID(ctx)
+		require.True(t, ok)
+		assert.Equal(t, userID, got)
+	})
 }
