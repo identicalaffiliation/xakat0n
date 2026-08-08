@@ -14,7 +14,7 @@ import (
 
 type QuitQueueUsecase struct {
 	queue     ports.QueueRepository
-	advence   ports.AdvanceUsecase
+	advance   ports.AdvanceUsecase
 	txManager ports.TxManager
 	logger    ports.Logger
 	ttl       time.Duration
@@ -22,14 +22,14 @@ type QuitQueueUsecase struct {
 
 func NewQuitQueueUsecase(
 	queue ports.QueueRepository,
-	advence ports.AdvanceUsecase,
+	advance ports.AdvanceUsecase,
 	manager ports.TxManager,
 	logger ports.Logger,
 	ttl time.Duration,
 ) *QuitQueueUsecase {
 	return &QuitQueueUsecase{
 		queue:     queue,
-		advence:   advence,
+		advance:   advance,
 		txManager: manager,
 		logger:    logger,
 		ttl:       ttl,
@@ -57,10 +57,10 @@ func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UU
 		return nil, domain.ErrInternal
 	}
 
-	err = u.advence.AdvanceQueue(ctx, itemID, u.ttl)
+	err = u.advance.AdvanceQueue(ctx, itemID, u.ttl)
 	if err != nil {
 		u.logger.Error(
-			"error advence queue",
+			"error advance queue",
 			"itemID", itemID,
 			"userID", userID,
 		)
