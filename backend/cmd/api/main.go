@@ -83,12 +83,12 @@ func main() {
 	router := httpserver.NewRouter()
 
 	auth.RegisterRoutes(router)
+	items.RegisterRoutes(router)
 
 	router.Group(func(r chi.Router) {
 		r.Use(httpx.JWTAuth(verifier))
 
 		queue.RegisterRoutes(r)
-		items.RegisterRoutes(r)
 		checkout.RegisterRoutes(r)
 	})
 

@@ -103,13 +103,15 @@ paths:
                   isLimited: false
                   stock: null
                   soldOut: false
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /items/{itemId}:
     get:
       tags: [items]
       summary: Карточка товара
+      description: >
+        Публичная ручка: каталог доступен без авторизации, в отличие
+        от queue/checkout, где действие привязано к конкретному
+        пользователю.
       parameters:
         - $ref: '#/components/parameters/ItemId'
       responses:
@@ -119,8 +121,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Item'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/ItemNotFound'
 

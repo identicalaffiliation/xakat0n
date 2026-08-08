@@ -107,6 +107,44 @@ func (repo *QueueRepository) IsSoldOut(ctx context.Context, productID uuid.UUID,
 	return purchased >= stock, nil
 }
 
+// CountPurchased возвращает количество PURCHASED-заявок по каждому из переданных
+// товаров, сгруппированное одним запросом (используется items-модулем для soldOut
+// в каталоге, где вызов IsSoldOut на каждый товар обернулся бы в N запросов).
+// Товары без единой PURCHASED-заявки в карте отсутствуют.
+func (repo *QueueRepository) CountPurchased(ctx context.Context, itemIDs []uuid.UUID) (map[uuid.UUID]int, error) {
+	counts := make(map[uuid.UUID]int, len(itemIDs))
+	if len(itemIDs) == 0 {
+		return counts, nil
+	}
+
+	const query = `
+		SELECT product_id, COUNT(*) FROM queues
+		WHERE product_id = ANY($1) AND status = 'PURCHASED'::queue_status
+		GROUP BY product_id`
+
+	rows, err := repo.dbtx(ctx).Query(ctx, query, itemIDs)
+	if err != nil {
+		return nil, fmt.Errorf("count purchased: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var productID uuid.UUID
+		var count int
+		if err := rows.Scan(&productID, &count); err != nil {
+			return nil, fmt.Errorf("scan count purchased: %w", err)
+		}
+
+		counts[productID] = count
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("count purchased: %w", err)
+	}
+
+	return counts, nil
+}
+
 func (repo *QueueRepository) TryPromoteUser(
 	ctx context.Context,
 	queueID, productID uuid.UUID,
