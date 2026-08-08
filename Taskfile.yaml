@@ -2,12 +2,9 @@ version: "3"
 
 tasks:
   up:
-    desc: Start PostgreSQL, apply migrations, and start the backend
+    desc: Build and start the entire application; backend waits for migrations
     cmds:
-      - task: db:up
-      - task: migrator:up
-      - task: backend:up
-      - task: metrics:up
+      - docker compose up --build --detach
 
   down:
     desc: Stop all services
@@ -91,6 +88,19 @@ tasks:
     desc: Follow backend logs
     cmds:
       - docker compose logs --follow backend
+
+  frontend:up:
+    desc: Build and start frontend service
+    cmds:
+      - docker compose up --build --detach frontend
+  frontend:down:
+    desc: Stop frontend service
+    cmds:
+      - docker compose stop frontend
+  frontend:logs:
+    desc: Follow frontend logs
+    cmds:
+      - docker compose logs --follow frontend
 
   migrator:up:
     desc: migrations up
