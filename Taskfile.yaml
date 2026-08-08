@@ -7,6 +7,7 @@ tasks:
       - task: db:up
       - task: migrator:up
       - task: backend:up
+      - task: metrics:up
 
   down:
     desc: Stop all services
@@ -156,6 +157,21 @@ tasks:
     cmds:
       - task: migrator:modules
       - task: migrator:check
+
+  metrics:up:
+    desc: Start VictoriaMetrics and Grafana
+    cmds:
+      - docker compose up --detach victoriametrics grafana
+
+  metrics:down:
+    desc: Stop VictoriaMetrics and Grafana
+    cmds:
+      - docker compose down victoriametrics grafana
+
+  metrics:logs:
+    desc: Follow VictoriaMetrics and Grafana logs
+    cmds:
+      - docker compose logs --follow victoriametrics grafana
 
   clean:
     cmds:
