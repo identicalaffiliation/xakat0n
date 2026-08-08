@@ -34,8 +34,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     networks:
       - xakat0n
+
   frontend:
     build:
       context: ./frontend
@@ -44,12 +47,13 @@ services:
       - "3000:80"
     depends_on:
       backend:
-        condition: service_started 
+        condition: service_started
     networks:
       - xakat0n
     environment:
       - VITE_API_URL=http://backend:8080
     restart: unless-stopped
+
   migrator:
     build:
       context: ./migrator
