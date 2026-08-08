@@ -1,6 +1,23 @@
 version: "3"
 
 tasks:
+  up:
+    desc: Start PostgreSQL, apply migrations, and start the backend
+    cmds:
+      - task: db:up
+      - task: migrator:up
+      - task: backend:up
+
+  down:
+    desc: Stop all services
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Follow logs from all services
+    cmds:
+      - docker compose logs --follow
+
   backend:modules:
     desc: Check that backend module files are up to date
     dir: backend
@@ -69,6 +86,10 @@ tasks:
     desc: Stop backend service
     cmds:
       - docker compose down backend
+  backend:logs:
+    desc: Follow backend logs
+    cmds:
+      - docker compose logs --follow backend
 
   migrator:up:
     desc: migrations up
@@ -85,6 +106,10 @@ tasks:
     cmds:
       - docker compose build migrator
       - docker compose run --rm migrator -config config.yml -command reset
+  migrator:logs:
+    desc: Follow migrator logs
+    cmds:
+      - docker compose logs --follow migrator
 
   migrator:modules:
     desc: Check that migrator module files are up to date

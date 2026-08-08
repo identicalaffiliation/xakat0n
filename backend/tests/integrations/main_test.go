@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	PostgresDockerImage = "postgres:17"
+	PostgresDockerImage = "postgres:16"
 	PostgresDb          = "testdb"
 	PostgresUser        = "testuser"
 	PostgresPass        = "testpassword"

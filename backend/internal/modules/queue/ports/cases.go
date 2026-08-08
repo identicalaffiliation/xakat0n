@@ -13,6 +13,10 @@ type CreateUsecase interface {
 	CreateQueue(ctx context.Context, in *dto.CreateQueueRequest) (*dto.Ticket, error)
 }
 
+type QuitUsecase interface {
+	QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error)
+}
+
 // AdvanceUsecase — переиспользуемый контракт продвижения очереди товара.
 // ttl передаётся явным параметром вызова, а не полем конструктора: так его
 // сможет переиспользовать любой другой вызывающий (например, POST /queue)
