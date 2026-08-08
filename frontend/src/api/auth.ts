@@ -12,18 +12,16 @@
 // };
 import client from './client';
 import { USE_MOCK } from './mock';
-import { mockLoginResponse } from './mockData'
+import { mockLoginResponse } from './mockData';
 
 export interface LoginResponse {
-  userId: string;
+  userId: string;    
   username: string;
-  token: string;
+  token: string;    
 }
 
 export const login = async (username: string): Promise<LoginResponse> => {
-  if (USE_MOCK) {
-    return mockLoginResponse(username);
-  }
+  if (USE_MOCK) return mockLoginResponse(username);
   const res = await client.post<LoginResponse>('/auth/login', { username });
   return res.data;
 };

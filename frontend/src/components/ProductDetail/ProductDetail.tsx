@@ -2,12 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Button, Paper, Container, AppBar, Toolbar, IconButton,
-  Chip, Autocomplete, TextField, FormControl, InputLabel, Select, MenuItem
+  Chip, Autocomplete, TextField,
 } from '@mui/material';
 import { FavoriteBorder, Favorite, Person, Search } from '@mui/icons-material';
 import { getItem, type Item } from '../../api/items';
-import { enterQueue, startCheckout, type QueueStatus } from '../../api/queue';
-import { useQueue } from '../../context/QueueContext';
+import { enterQueue, startCheckout } from '../../api/queue';
+// import { useQueue } from '../../context/QueueContext';
 import { products, type Product } from '../../data/products';
 
 const ProductDetail: React.FC = () => {
@@ -16,7 +16,7 @@ const ProductDetail: React.FC = () => {
   const [product, setProduct] = useState<Item | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const { state, forceStatus } = useQueue();
+  // const { state, forceStatus } = useQueue();
 
   useEffect(() => {
     if (!id) return;
@@ -50,7 +50,8 @@ const ProductDetail: React.FC = () => {
     } else {
       try {
         await startCheckout(product.item_id);
-        navigate(`/product/${product.item_id}/queue`);
+        // navigate(`/product/${product.item_id}/queue`);
+        navigate(`/product/${product.item_id}/checkout`);
       } catch (error) {
         console.error('Ошибка при переходе к оформлению:', error);
         alert('Не удалось перейти к оформлению.');
@@ -139,13 +140,13 @@ const ProductDetail: React.FC = () => {
               </Box>
             </Box>
           </Box>
-          {import.meta.env.DEV && (
+          {/* {import.meta.env.DEV && (
             <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}>
               <Typography variant="subtitle2">Тестовый режим</Typography>
               <FormControl fullWidth size="small" sx={{ mt: 1 }}>
                 <InputLabel>Статус товара</InputLabel>
                 <Select
-                  value={state.status || ''}
+                  value={state.status || ''}d
                   onChange={(e) => {
                     const status = e.target.value as QueueStatus;
                     if (product) {
@@ -166,7 +167,7 @@ const ProductDetail: React.FC = () => {
                 </Select>
               </FormControl>
             </Box>
-          )}
+          )} */}
         </Paper>
       </Container>
     </Box>
