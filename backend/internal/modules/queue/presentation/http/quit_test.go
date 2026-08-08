@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -18,14 +19,14 @@ import (
 )
 
 type quitUsecaseStub struct {
-	response *dto.QueueResponse
+	response *dto.Ticket
 	err      error
 	called   bool
 	itemID   uuid.UUID
 	userID   uuid.UUID
 }
 
-func (s *quitUsecaseStub) QuitQueue(_ context.Context, itemID, userID uuid.UUID) (*dto.QueueResponse, error) {
+func (s *quitUsecaseStub) QuitQueue(_ context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error) {
 	s.called = true
 	s.itemID = itemID
 	s.userID = userID
@@ -47,12 +48,12 @@ func quitRequest(itemID string, userID uuid.UUID) *http.Request {
 func TestQuitQueueHandler_Success(t *testing.T) {
 	itemID := uuid.New()
 	userID := uuid.New()
-	usecase := &quitUsecaseStub{response: dto.NewQueueResponse(&domain.Queue{
+	usecase := &quitUsecaseStub{response: dto.NewTicket(&domain.Queue{
 		ID:        uuid.New(),
 		ProductID: itemID,
 		UserID:    userID,
 		Status:    domain.QueueStatusCancelled,
-	})}
+	}, time.Now())}
 	recorder := httptest.NewRecorder()
 
 	quitRouter(usecase).ServeHTTP(recorder, quitRequest(itemID.String(), userID))

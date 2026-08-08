@@ -37,7 +37,7 @@ func TestQuitQueueUsecase_PromotesNextUser(t *testing.T) {
 	response, err := usecase.QuitQueue(context.Background(), itemID, firstUserID)
 
 	require.NoError(t, err)
-	assert.Equal(t, domain.QueueStatusCancelled, response.Queue.Status)
+	assert.Equal(t, domain.QueueStatusCancelled, response.Status)
 
 	var (
 		status        domain.QueueStatus

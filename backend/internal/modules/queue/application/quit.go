@@ -36,7 +36,7 @@ func NewQuitQueueUsecase(
 	}
 }
 
-func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.QueueResponse, error) {
+func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error) {
 	queue, err := u.queue.QuitQueue(ctx, itemID, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrQueueNotFound) {
@@ -57,7 +57,14 @@ func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UU
 		return nil, domain.ErrInternal
 	}
 
-	_ = u.advence.AdvanceQueue(ctx, itemID, u.ttl)
+	err = u.advence.AdvanceQueue(ctx, itemID, u.ttl)
+	if err != nil {
+		u.logger.Error(
+			"error advence queue",
+			"itemID", itemID,
+			"userID", userID,
+		)
+	}
 
-	return dto.NewQueueResponse(queue), nil
+	return dto.NewTicket(queue, time.Now()), nil
 }

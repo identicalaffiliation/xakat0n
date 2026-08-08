@@ -14,7 +14,7 @@ type CreateUsecase interface {
 }
 
 type QuitUsecase interface {
-	QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.QueueResponse, error)
+	QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error)
 }
 
 // AdvanceUsecase — переиспользуемый контракт продвижения очереди товара.
