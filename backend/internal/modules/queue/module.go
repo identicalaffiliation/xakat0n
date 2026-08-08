@@ -11,7 +11,6 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/infrastructure/postgres"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 	httpapi "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/presentation/http"
-	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
 )
 
@@ -35,9 +34,9 @@ func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	createRoute := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
+	r.Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
 
 	meRoute := fmt.Sprintf("/api/v1/items/{%s}/queue/me", httpapi.ItemIdMuxPattern)
-	r.With(httpx.SessionAuth).Delete(meRoute, httpapi.QuitQueue(m.quitUsecase))
-	r.With(httpx.SessionAuth).Get(meRoute, httpapi.GetMyTicket(m.getMeUsecase))
+	r.Delete(meRoute, httpapi.QuitQueue(m.quitUsecase))
+	r.Get(meRoute, httpapi.GetMyTicket(m.getMeUsecase))
 }

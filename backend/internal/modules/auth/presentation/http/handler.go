@@ -16,13 +16,13 @@ func Login(issuer ports.TokenIssuer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var request dto.LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid request body")
 			return
 		}
 
 		username, err := domain.NewUsername(request.Username)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "bad_request", err.Error())
 			return
 		}
 
@@ -30,7 +30,7 @@ func Login(issuer ports.TokenIssuer) http.HandlerFunc {
 
 		token, err := issuer.Issue(userID, username)
 		if err != nil {
-			http.Error(w, "failed to issue token", http.StatusInternalServerError)
+			httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "failed to issue token")
 			return
 		}
 
