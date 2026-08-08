@@ -31,7 +31,7 @@ func NewVerifier(
 
 func (v *Verifier) Verify(tokenString string) (uuid.UUID, error) {
 	if v.publicKey == nil {
-		return uuid.Nil, ErrPrivateKeyRequired
+		return uuid.Nil, ErrPublicKeyRequired
 	}
 
 	claims := new(Claims)
