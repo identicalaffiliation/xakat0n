@@ -22,25 +22,155 @@ func TestCreateCreateRequest(t *testing.T) {
 	assert.Equal(t, actual.ProductID, id1)
 }
 
-func TestCreateCreateResponse(t *testing.T) {
+func TestNewTicket(t *testing.T) {
 	t.Parallel()
 
-	queue := domain.Queue{
-		ID:        uuid.New(),
-		ProductID: uuid.New(),
-		UserID:    uuid.New(),
-		Status:    domain.QueueStatusCheckout,
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-	}
+	queueID, itemID := uuid.New(), uuid.New()
+	now := time.Now().UTC()
 
-	actual := NewCreateResponse(&queue)
-	require.NotNil(t, actual)
+	t.Run("offered sets active window fields", func(t *testing.T) {
+		expiresAt := now.Add(90 * time.Second)
+		queue := &domain.Queue{
+			ID:        queueID,
+			ProductID: itemID,
+			Status:    domain.QueueStatusOffered,
+			ExpiresAt: &expiresAt,
+			CreatedAt: now.Add(-time.Minute),
+		}
 
-	assert.Equal(t, queue.ID, actual.Queue.ID)
-	assert.Equal(t, queue.ProductID, actual.Queue.ProductID)
-	assert.Equal(t, queue.UserID, actual.Queue.UserID)
-	assert.Equal(t, queue.Status, actual.Queue.Status)
-	assert.Equal(t, queue.CreatedAt, actual.Queue.CreatedAt)
-	assert.Equal(t, queue.UpdatedAt, actual.Queue.UpdatedAt)
+		ticket := NewTicket(queue, now)
+
+		assert.Equal(t, queueID, ticket.TicketID)
+		assert.Equal(t, itemID, ticket.ItemID)
+		assert.Equal(t, domain.QueueStatusOffered, ticket.Status)
+		assert.Equal(t, now, ticket.ServerTime)
+		assert.Equal(t, queue.CreatedAt, ticket.CreatedAt)
+		assert.Equal(t, &expiresAt, ticket.ExpiresAt)
+		require.NotNil(t, ticket.ExpiresInSeconds)
+		assert.InDelta(t, int64(90), *ticket.ExpiresInSeconds, 1)
+		assert.Nil(t, ticket.Position)
+		assert.Nil(t, ticket.NextSlotFreeInSeconds)
+	})
+
+	t.Run("checkout also has active window", func(t *testing.T) {
+		expiresAt := now.Add(10 * time.Second)
+		queue := &domain.Queue{
+			ID:        uuid.New(),
+			ProductID: itemID,
+			Status:    domain.QueueStatusCheckout,
+			ExpiresAt: &expiresAt,
+		}
+
+		ticket := NewTicket(queue, now)
+
+		require.NotNil(t, ticket.ExpiresInSeconds)
+		assert.InDelta(t, int64(10), *ticket.ExpiresInSeconds, 1)
+	})
+
+	t.Run("queued has no window", func(t *testing.T) {
+		queue := &domain.Queue{
+			ID:        uuid.New(),
+			ProductID: itemID,
+			Status:    domain.QueueStatusQueued,
+		}
+
+		ticket := NewTicket(queue, now)
+
+		assert.Nil(t, ticket.ExpiresInSeconds)
+		assert.Nil(t, ticket.ExpiresAt)
+	})
+
+	t.Run("already expired is clamped to zero", func(t *testing.T) {
+		expiresAt := now.Add(-5 * time.Second)
+		queue := &domain.Queue{
+			ID:        uuid.New(),
+			ProductID: itemID,
+			Status:    domain.QueueStatusOffered,
+			ExpiresAt: &expiresAt,
+		}
+
+		ticket := NewTicket(queue, now)
+
+		require.NotNil(t, ticket.ExpiresInSeconds)
+		assert.Equal(t, int64(0), *ticket.ExpiresInSeconds)
+	})
+
+	t.Run("terminal status without expires at", func(t *testing.T) {
+		queue := &domain.Queue{
+			ID:        uuid.New(),
+			ProductID: itemID,
+			Status:    domain.QueueStatusPurchased,
+		}
+
+		ticket := NewTicket(queue, now)
+
+		assert.Nil(t, ticket.ExpiresInSeconds)
+		assert.Nil(t, ticket.Position)
+	})
+}
+
+func TestSetQueuedFields(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+
+	t.Run("sets position and next slot estimate", func(t *testing.T) {
+		nextFree := now.Add(42 * time.Second)
+		ticket := NewTicket(&domain.Queue{
+			ID:        uuid.New(),
+			ProductID: uuid.New(),
+			Status:    domain.QueueStatusQueued,
+			CreatedAt: now,
+		}, now)
+
+		ticket.SetQueuedFields(2, &nextFree, now)
+
+		require.NotNil(t, ticket.Position)
+		assert.Equal(t, 3, *ticket.Position)
+		require.NotNil(t, ticket.NextSlotFreeInSeconds)
+		assert.InDelta(t, int64(42), *ticket.NextSlotFreeInSeconds, 1)
+	})
+
+	t.Run("first in line is position one", func(t *testing.T) {
+		ticket := NewTicket(&domain.Queue{
+			ID:        uuid.New(),
+			ProductID: uuid.New(),
+			Status:    domain.QueueStatusQueued,
+			CreatedAt: now,
+		}, now)
+
+		ticket.SetQueuedFields(0, nil, now)
+
+		require.NotNil(t, ticket.Position)
+		assert.Equal(t, 1, *ticket.Position)
+		assert.Nil(t, ticket.NextSlotFreeInSeconds)
+	})
+}
+
+func TestClampSeconds(t *testing.T) {
+	t.Parallel()
+
+	t.Run("negative duration clamps to zero", func(t *testing.T) {
+		result := clampSeconds(-10 * time.Second)
+		require.NotNil(t, result)
+		assert.Equal(t, int64(0), *result)
+	})
+
+	t.Run("zero duration stays zero", func(t *testing.T) {
+		result := clampSeconds(0)
+		require.NotNil(t, result)
+		assert.Equal(t, int64(0), *result)
+	})
+
+	t.Run("positive duration is kept", func(t *testing.T) {
+		result := clampSeconds(90 * time.Second)
+		require.NotNil(t, result)
+		assert.Equal(t, int64(90), *result)
+	})
+
+	t.Run("sub-second duration truncates", func(t *testing.T) {
+		result := clampSeconds(500 * time.Millisecond)
+		require.NotNil(t, result)
+		assert.Equal(t, int64(0), *result)
+	})
 }

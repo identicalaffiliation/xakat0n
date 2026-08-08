@@ -14,35 +14,79 @@ import (
 )
 
 const (
-	ProductIdMuxPattern = "productId"
+	ItemIdMuxPattern = "itemId"
 )
 
 func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		productID, err := uuid.Parse(chi.URLParam(r, ProductIdMuxPattern))
+		productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
-			http.Error(w, "invalid product id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
 		}
 
 		userID, ok := httpx.UserID(r.Context())
 		if !ok {
-			http.Error(w, "failed to parse user id", http.StatusUnauthorized)
+			httpx.WriteError(w, http.StatusUnauthorized, "unauthorized", "invalid user id")
 			return
 		}
 
-		rCtx := r.Context()
-		response, err := usecase.CreateQueue(rCtx, dto.NewCreateRequest(productID, userID))
+		response, err := usecase.CreateQueue(r.Context(), dto.NewCreateRequest(productID, userID))
 		if err != nil {
-			if errors.Is(err, domain.ErrUserAlreadyQueued) {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+			switch {
+			case errors.Is(err, domain.ErrQueueNotApplicable),
+				errors.Is(err, domain.ErrItemSoldOut):
+				httpx.WriteError(w, http.StatusConflict, "queue_not_applicable", "queue not applicable")
+			case errors.Is(err, domain.ErrItemNotFound):
+				httpx.WriteError(w, http.StatusNotFound, "item_not_found", "item not found")
+			default:
+				httpx.WriteError(w, http.StatusInternalServerError, "internal_server_error", "internal server error")
+			}
+			return
+		}
+
+		httpx.EncodeJSON(w, response, http.StatusOK)
+	}
+}
+
+func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		itemID, userID, ok := queueIDs(w, r)
+		if !ok {
+			return
+		}
+
+		response, err := usecase.QuitQueue(r.Context(), itemID, userID)
+		if err != nil {
+			if errors.Is(err, domain.ErrQueueNotFound) {
+				http.Error(w, err.Error(), http.StatusNotFound)
+
 				return
 			}
 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+
 			return
 		}
 
-		httpx.EncodeJSON(w, response, http.StatusCreated)
+		httpx.EncodeJSON(w, response, http.StatusOK)
 	}
+}
+
+func queueIDs(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
+	itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
+	if err != nil {
+		http.Error(w, "invalid item id", http.StatusBadRequest)
+
+		return uuid.Nil, uuid.Nil, false
+	}
+
+	userID, ok := httpx.UserID(r.Context())
+	if !ok {
+		http.Error(w, "failed to parse user id", http.StatusUnauthorized)
+
+		return uuid.Nil, uuid.Nil, false
+	}
+
+	return itemID, userID, true
 }

@@ -28,7 +28,7 @@ servers:
     description: Локальный запуск через docker compose
 
 security:
-  - SessionTokenAuth: []
+  - BearerAuth: []
 
 tags:
   - name: auth
@@ -47,9 +47,8 @@ paths:
       summary: Вход по имени пользователя
       description: >
         Если пользователя с таким именем нет — создаётся. Пароля нет:
-        полноценная авторизация вне скоупа. Возвращает session_token,
-        который клиент хранит в sessionStorage и передаёт
-        в заголовке X-Session-Token.
+        полноценная авторизация вне скоупа. Возвращает JWT, который
+        клиент передаёт в заголовке Authorization по схеме Bearer.
       security: []
       requestBody:
         required: true
@@ -66,11 +65,11 @@ paths:
                   example: "hunter_42"
       responses:
         '200':
-          description: Пользователь найден или создан, сессия выдана
+          description: Пользователь найден или создан, JWT выдан
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: '#/components/schemas/LoginResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -88,22 +87,22 @@ paths:
                 items:
                   $ref: '#/components/schemas/Item'
               example:
-                - item_id: "a1b2c3d4-0000-0000-0000-000000000001"
+                - itemId: "a1b2c3d4-0000-0000-0000-000000000001"
                   title: "Кроссовки, лимитированная коллекция"
                   description: "Эксклюзивная модель, ограниченный тираж"
                   price: 24990
                   category: "shoes"
-                  is_limited: true
+                  isLimited: true
                   stock: 1
-                  sold_out: false
-                - item_id: "a1b2c3d4-0000-0000-0000-000000000002"
+                  soldOut: false
+                - itemId: "a1b2c3d4-0000-0000-0000-000000000002"
                   title: "Обычные кроссовки"
                   description: "В наличии на складе"
                   price: 5990
                   category: "shoes"
-                  is_limited: false
+                  isLimited: false
                   stock: null
-                  sold_out: false
+                  soldOut: false
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -204,31 +203,27 @@ paths:
                 offered:
                   summary: Место нашлось, право выдано сразу
                   value:
-                    ticket_id: "f1e2d3c4-0000-0000-0000-000000000001"
-                    item_id: "a1b2c3d4-0000-0000-0000-000000000001"
+                    ticketId: "f1e2d3c4-0000-0000-0000-000000000001"
+                    itemId: "a1b2c3d4-0000-0000-0000-000000000001"
                     status: "OFFERED"
                     position: null
-                    next_slot_free_in_seconds: null
-                    expires_in_seconds: 90
-                    expires_at: "2026-08-04T12:06:30Z"
-                    checkout_started_at: null
-                    payment_attempts: 0
-                    created_at: "2026-08-04T12:05:00Z"
-                    server_time: "2026-08-04T12:05:00Z"
+                    nextSlotFreeInSeconds: null
+                    expiresInSeconds: 90
+                    expiresAt: "2026-08-04T12:06:30Z"
+                    createdAt: "2026-08-04T12:05:00Z"
+                    serverTime: "2026-08-04T12:05:00Z"
                 queued:
                   summary: Мест нет, встал в очередь
                   value:
-                    ticket_id: "f1e2d3c4-0000-0000-0000-000000000002"
-                    item_id: "a1b2c3d4-0000-0000-0000-000000000001"
+                    ticketId: "f1e2d3c4-0000-0000-0000-000000000002"
+                    itemId: "a1b2c3d4-0000-0000-0000-000000000001"
                     status: "QUEUED"
                     position: 3
-                    next_slot_free_in_seconds: 42
-                    expires_in_seconds: null
-                    expires_at: null
-                    checkout_started_at: null
-                    payment_attempts: 0
-                    created_at: "2026-08-04T12:05:00Z"
-                    server_time: "2026-08-04T12:05:00Z"
+                    nextSlotFreeInSeconds: 42
+                    expiresInSeconds: null
+                    expiresAt: null
+                    createdAt: "2026-08-04T12:05:00Z"
+                    serverTime: "2026-08-04T12:05:00Z"
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -254,7 +249,7 @@ paths:
         освободившиеся места следующим в очереди. Отдельного
         фонового процесса в MVP нет.
 
-        Заявка ищется по паре (item_id, user_id), где user_id взят
+        Заявка ищется по паре (itemId, userId), где userId взят
         из серверной сессии — поэтому статус переживает закрытие
         вкладки и разрыв соединения, и восстановление не требует
         ни навигации, ни списка заявок: достаточно снова открыть
@@ -313,14 +308,14 @@ paths:
         Рубеж защиты и передача управления. Заказ и оплата вне скоупа:
         здесь только проверка права и перевод заявки в CHECKOUT.
 
-        Право проверяется по паре (user_id, item_id), где user_id взят
-        из серверной сессии. Ни ticket_id, ни user_id из запроса
+        Право проверяется по паре (userId, itemId), где userId взят
+        из серверной сессии. Ни ticketId, ни userId из запроса
         не принимаются — воспользоваться чужим правом клиент не может.
-        Проверка сверяет время напрямую (expires_at > now()), а не
+        Проверка сверяет время напрямую (expiresAt > now()), а не
         читает статус, который мог устареть, если очередь давно
         никто не опрашивал.
 
-        Окно при этом не перезапускается: expires_at остаётся тем же,
+        Окно при этом не перезапускается: expiresAt остаётся тем же,
         что был выставлен при выдаче права. Иначе остаток права
         конвертировался бы в полное новое окно, и нажимать кнопку
         было бы рационально немедленно, ничего не решая.
@@ -383,9 +378,17 @@ paths:
         применяется только к статусу CHECKOUT, поэтому дубль ничего
         не найдёт.
 
+        ticketId обязателен: право на покупку не привязано к товару
+        и пользователю навечно — после истечения окна пользователь
+        может встать в очередь заново и получить новый тикет на тот
+        же товар, пока старый уже терминален (EXPIRED), но ещё
+        существует в базе. Без ticketId опоздавшее или задвоенное
+        уведомление о старой попытке нечем было бы отличить от
+        уведомления о новой, и оно применилось бы не к той заявке.
+
         В MVP вызывающая сторона — кнопка страницы-заглушки
         оформления. В проде здесь была бы service-to-service
-        авторизация, а user_id приходил бы в теле запроса.
+        авторизация, а userId приходил бы в теле запроса.
       parameters:
         - $ref: '#/components/parameters/ItemId'
       requestBody:
@@ -394,8 +397,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [result]
+              required: [ticketId, result]
               properties:
+                ticketId:
+                  type: string
+                  format: uuid
                 result:
                   type: string
                   enum: [paid, failed]
@@ -404,7 +410,7 @@ paths:
           description: >
             Исход зафиксирован. При paid заявка в PURCHASED;
             при failed — по-прежнему в CHECKOUT с прежним остатком
-            окна и увеличенным payment_attempts
+            окна
           content:
             application/json:
               schema:
@@ -423,36 +429,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '429':
-          description: >
-            Попытки чаще одной в 2 секунды
-            (error: payment_retry_too_soon)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
-    SessionTokenAuth:
-      type: apiKey
-      in: header
-      name: X-Session-Token
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
       description: >
-        Токен — 32 случайных байта, выдаётся в POST /auth/login
-        и резолвится сервером в user_id.
+        JWT выдаётся в POST /auth/login и передаётся в заголовке
+        Authorization в формате Bearer <token>. Токен подписан
+        алгоритмом RS256, заголовок содержит kid. Claims содержат
+        iss, aud, sub с UUID пользователя, username, iat и exp.
 
-        Клиент не передаёт user_id ни в каком виде: право на покупку
+        Клиент не передаёт userId ни в каком виде: право на покупку
         обязано быть персональным и непередаваемым, а принимаемый
         от клиента идентификатор пользователя обнулил бы эту гарантию.
-
-        Заголовок, а не cookie: несколько одновременно открытых окон
-        инкогнито делят одну сессию кук между собой, и демонстрация
-        с несколькими параллельными покупателями превратилась бы
-        в демонстрацию одного. Клиенту следует хранить токен
-        в sessionStorage — он изолирован между вкладками, в отличие
-        от localStorage, и переживает перезагрузку страницы,
-        в отличие от переменной в памяти.
 
   parameters:
     ItemId:
@@ -471,7 +463,8 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     Unauthorized:
-      description: Заголовок X-Session-Token отсутствует или недействителен
+      description: >
+        Bearer JWT отсутствует, повреждён, просрочен или не прошёл проверку
       content:
         application/json:
           schema:
@@ -490,29 +483,31 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
-    Session:
+    LoginResponse:
       type: object
-      required: [user_id, username, session_token]
+      required: [userId, username, token]
       properties:
-        user_id:
+        userId:
           type: string
           format: uuid
           description: Для отображения. В запросах не используется.
         username:
           type: string
-        session_token:
+        token:
           type: string
-          description: Передаётся в заголовке X-Session-Token
+          description: >
+            JWT для передачи в заголовке Authorization в формате
+            Bearer <token>
       example:
-        user_id: "b7c1d2e3-0000-0000-0000-000000000001"
+        userId: "b7c1d2e3-0000-0000-0000-000000000001"
         username: "hunter_42"
-        session_token: "9pQ3xK7mWv2sT8bH1nR4jL6cY0dF5aZe"
+        token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Im1vY2sta2V5LTEiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJiN2MxZDJlMy0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJ1c2VybmFtZSI6Imh1bnRlcl80MiJ9.signature"
 
     Item:
       type: object
-      required: [item_id, title, price, is_limited, sold_out]
+      required: [itemId, title, price, isLimited, soldOut]
       properties:
-        item_id:
+        itemId:
           type: string
           format: uuid
         title:
@@ -525,7 +520,7 @@ components:
         category:
           type: string
           description: Основа подбора похожих лотов
-        is_limited:
+        isLimited:
           type: boolean
           description: >
             Дефицитный ли товар. Порога по остатку нет: помечен
@@ -535,11 +530,11 @@ components:
           type: integer
           nullable: true
           description: >
-            Ёмкость, заполняется только при is_limited = true.
+            Ёмкость, заполняется только при isLimited = true.
             Никогда не декрементируется: занятость выводится
             из заявок. Владельцем резерва должен быть кто-то один —
             либо очередь, либо сервис стоков; в MVP это очередь.
-        sold_out:
+        soldOut:
           type: boolean
           description: >
             Число выкупленных единиц сравнялось со stock. Считается
@@ -547,14 +542,14 @@ components:
             и может завершиться покупкой или истечь, объявлять товар
             распроданным для остальных нельзя.
       example:
-        item_id: "a1b2c3d4-0000-0000-0000-000000000001"
+        itemId: "a1b2c3d4-0000-0000-0000-000000000001"
         title: "Кроссовки, лимитированная коллекция"
         description: "Эксклюзивная модель, ограниченный тираж"
         price: 24990
         category: "shoes"
-        is_limited: true
+        isLimited: true
         stock: 1
-        sold_out: false
+        soldOut: false
 
     Ticket:
       type: object
@@ -562,12 +557,12 @@ components:
         Заявка пользователя на покупку конкретного дефицитного товара.
         Одна активная заявка на пару (пользователь, товар); на разные
         товары ограничений нет.
-      required: [ticket_id, item_id, status, created_at, server_time]
+      required: [ticketId, itemId, status, createdAt, serverTime]
       properties:
-        ticket_id:
+        ticketId:
           type: string
           format: uuid
-        item_id:
+        itemId:
           type: string
           format: uuid
         status:
@@ -589,7 +584,7 @@ components:
             и CHECKOUT не считаются: они ждут не очереди, а своего
             таймера. Значение может уменьшиться сразу на несколько
             единиц, если освободилось несколько мест одновременно.
-        next_slot_free_in_seconds:
+        nextSlotFreeInSeconds:
           type: integer
           nullable: true
           description: >
@@ -599,64 +594,49 @@ components:
             место освободится либо раньше, если человек впереди
             купит или откажется, либо ровно тогда. Только при
             status = QUEUED.
-        expires_in_seconds:
+        expiresInSeconds:
           type: integer
           nullable: true
           description: >
             Остаток окна. Заполняется при OFFERED и при CHECKOUT —
             это один и тот же счётчик, он не сбрасывается при переходе
             к оформлению. Клиенту следует отсчитывать таймер от этого
-            числа, а не от разницы expires_at и локальных часов:
+            числа, а не от разницы expiresAt и локальных часов:
             расхождение часов браузера и сервера исказило бы отсчёт.
             При переходе OFFERED → CHECKOUT счётчик в интерфейсе
             обязан визуально продолжиться, а не перерисоваться.
-        expires_at:
+        expiresAt:
           type: string
           format: date-time
           nullable: true
           description: >
             Абсолютный дедлайн окна, единый для OFFERED и CHECKOUT.
             Выставляется один раз при выдаче права. Для отображения
-            и отладки; для отсчёта использовать expires_in_seconds.
-        checkout_started_at:
-          type: string
-          format: date-time
-          nullable: true
-          description: >
-            Когда пользователь перешёл к оформлению. В решениях
-            не участвует: различает варианты сообщения при EXPIRED —
-            «не дошёл до оформления» и «не успел оплатить».
-        payment_attempts:
-          type: integer
-          description: >
-            Число зафиксированных попыток оплаты. Не ограничено;
-            используется в сообщениях и аналитике.
-        created_at:
+            и отладки; для отсчёта использовать expiresInSeconds.
+        createdAt:
           type: string
           format: date-time
           description: Время входа в очередь. Определяет позицию (FIFO).
-        server_time:
+        serverTime:
           type: string
           format: date-time
           description: Время сервера на момент ответа
       example:
-        ticket_id: "f1e2d3c4-0000-0000-0000-000000000001"
-        item_id: "a1b2c3d4-0000-0000-0000-000000000001"
+        ticketId: "f1e2d3c4-0000-0000-0000-000000000001"
+        itemId: "a1b2c3d4-0000-0000-0000-000000000001"
         status: "OFFERED"
         position: null
-        next_slot_free_in_seconds: null
-        expires_in_seconds: 47
-        expires_at: "2026-08-04T12:05:00Z"
-        checkout_started_at: null
-        payment_attempts: 0
-        created_at: "2026-08-04T12:00:00Z"
-        server_time: "2026-08-04T12:04:13Z"
+        nextSlotFreeInSeconds: null
+        expiresInSeconds: 47
+        expiresAt: "2026-08-04T12:05:00Z"
+        createdAt: "2026-08-04T12:00:00Z"
+        serverTime: "2026-08-04T12:04:13Z"
 
     CheckoutStarted:
       type: object
-      required: [queue_applied]
+      required: [queueApplied]
       properties:
-        queue_applied:
+        queueApplied:
           type: boolean
           description: >
             false для не дефицитного товара: очередь не применялась,
@@ -665,21 +645,19 @@ components:
           allOf:
             - $ref: '#/components/schemas/Ticket'
           nullable: true
-          description: Заявка в статусе CHECKOUT; null при queue_applied = false
+          description: Заявка в статусе CHECKOUT; null при queueApplied = false
       example:
-        queue_applied: true
+        queueApplied: true
         ticket:
-          ticket_id: "f1e2d3c4-0000-0000-0000-000000000001"
-          item_id: "a1b2c3d4-0000-0000-0000-000000000001"
+          ticketId: "f1e2d3c4-0000-0000-0000-000000000001"
+          itemId: "a1b2c3d4-0000-0000-0000-000000000001"
           status: "CHECKOUT"
           position: null
-          next_slot_free_in_seconds: null
-          expires_in_seconds: 42
-          expires_at: "2026-08-04T12:05:00Z"
-          checkout_started_at: "2026-08-04T12:04:18Z"
-          payment_attempts: 0
-          created_at: "2026-08-04T12:00:00Z"
-          server_time: "2026-08-04T12:04:18Z"
+          nextSlotFreeInSeconds: null
+          expiresInSeconds: 42
+          expiresAt: "2026-08-04T12:05:00Z"
+          createdAt: "2026-08-04T12:00:00Z"
+          serverTime: "2026-08-04T12:04:18Z"
 
     Error:
       type: object
@@ -697,7 +675,6 @@ components:
             - queue_not_applicable
             - item_sold_out
             - checkout_result_too_late
-            - payment_retry_too_soon
         message:
           type: string
           description: Человекочитаемое пояснение, пригодное для показа пользователю
