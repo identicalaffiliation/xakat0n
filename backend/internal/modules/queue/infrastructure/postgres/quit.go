@@ -24,7 +24,8 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 			user_id,
 			status,
 			created_at,
-			updated_at
+			updated_at,
+			expires_at
 	`
 	var queue domain.Queue
 	err := repo.dbtx(ctx).QueryRow(ctx, quitUserQuery, productID, userID).Scan(
@@ -34,6 +35,7 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 		&queue.Status,
 		&queue.CreatedAt,
 		&queue.UpdatedAt,
+		&queue.ExpiresAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

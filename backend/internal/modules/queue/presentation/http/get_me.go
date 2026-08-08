@@ -16,24 +16,24 @@ func GetMyTicket(usecase ports.GetMeUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
-			http.Error(w, "invalid item id", http.StatusBadRequest)
+			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
 		}
 
 		userID, ok := httpx.UserID(r.Context())
 		if !ok {
-			http.Error(w, "failed to parse user id", http.StatusUnauthorized)
+			httpx.WriteError(w, http.StatusUnauthorized, "unauthorized", "missing or invalid session")
 			return
 		}
 
 		ticket, err := usecase.GetMyTicket(r.Context(), itemID, userID)
 		if err != nil {
 			if errors.Is(err, domain.ErrTicketNotFound) {
-				http.Error(w, err.Error(), http.StatusNotFound)
+				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "user has no ticket for this item")
 				return
 			}
 
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
 			return
 		}
 
