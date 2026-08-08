@@ -70,7 +70,7 @@ tasks:
   postgres:down:
     desc: Stop PostgreSQL
     cmds:
-      - docker compose down
+      - docker compose stop postgres
   postgres:logs:
     desc: Follow PostgreSQL logs
     cmds:
