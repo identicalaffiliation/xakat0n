@@ -22,3 +22,18 @@ func LoadPrivateKey(path string) (*rsa.PrivateKey, error) {
 
 	return privateKey, nil
 }
+
+func LoadPublicKey(path string) (*rsa.PublicKey, error) {
+	// The path is supplied by trusted application configuration, not by an HTTP request.
+	data, err := os.ReadFile(path) //nolint:gosec // G304: configured private-key path is intentional.
+	if err != nil {
+		return nil, fmt.Errorf("read public key: %w", err)
+	}
+
+	publicKey, err := golangjwt.ParseRSAPublicKeyFromPEM(data)
+	if err != nil {
+		return nil, fmt.Errorf("parse public key: %w", err)
+	}
+
+	return publicKey, nil
+}
