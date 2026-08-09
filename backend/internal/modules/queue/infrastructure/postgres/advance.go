@@ -8,28 +8,28 @@ import (
 	"github.com/google/uuid"
 )
 
-func (repo *QueueRepository) ExpireStale(ctx context.Context, productID uuid.UUID) error {
+func (repo *QueueRepository) ExpireStale(ctx context.Context, itemID uuid.UUID) error {
 	const query = `
 		UPDATE queues SET status = 'EXPIRED'::queue_status, updated_at = now()
-		WHERE product_id = $1
+		WHERE item_id = $1
 		AND status IN ('OFFERED', 'CHECKOUT')
 		AND expires_at < now()`
 
-	if _, err := repo.dbtx(ctx).Exec(ctx, query, productID); err != nil {
+	if _, err := repo.dbtx(ctx).Exec(ctx, query, itemID); err != nil {
 		return fmt.Errorf("expire stale: %w", err)
 	}
 
 	return nil
 }
 
-func (repo *QueueRepository) CountTaken(ctx context.Context, productID uuid.UUID) (int, error) {
+func (repo *QueueRepository) CountTaken(ctx context.Context, itemID uuid.UUID) (int, error) {
 	const query = `
 		SELECT COUNT(*) FROM queues
-		WHERE product_id = $1
+		WHERE item_id = $1
 		AND status IN ('OFFERED', 'CHECKOUT', 'PURCHASED')`
 
 	var count int
-	if err := repo.dbtx(ctx).QueryRow(ctx, query, productID).Scan(&count); err != nil {
+	if err := repo.dbtx(ctx).QueryRow(ctx, query, itemID).Scan(&count); err != nil {
 		return 0, fmt.Errorf("count taken: %w", err)
 	}
 
@@ -38,7 +38,7 @@ func (repo *QueueRepository) CountTaken(ctx context.Context, productID uuid.UUID
 
 func (repo *QueueRepository) PromoteNext(
 	ctx context.Context,
-	productID uuid.UUID,
+	itemID uuid.UUID,
 	freeSlots int,
 	ttl time.Duration,
 ) (int64, error) {
@@ -47,7 +47,7 @@ func (repo *QueueRepository) PromoteNext(
 		SET status = 'OFFERED'::queue_status, expires_at = now() + $3::interval, updated_at = now()
 		WHERE id IN (
 			SELECT id FROM queues
-			WHERE product_id = $1 AND status = 'QUEUED'::queue_status
+			WHERE item_id = $1 AND status = 'QUEUED'::queue_status
 			ORDER BY created_at
 			LIMIT $2
 			FOR UPDATE SKIP LOCKED
@@ -55,7 +55,7 @@ func (repo *QueueRepository) PromoteNext(
 
 	ttlStr := fmt.Sprintf("%d seconds", int(ttl.Seconds()))
 
-	tag, err := repo.dbtx(ctx).Exec(ctx, query, productID, freeSlots, ttlStr)
+	tag, err := repo.dbtx(ctx).Exec(ctx, query, itemID, freeSlots, ttlStr)
 	if err != nil {
 		return 0, fmt.Errorf("promote next: %w", err)
 	}
@@ -63,17 +63,17 @@ func (repo *QueueRepository) PromoteNext(
 	return tag.RowsAffected(), nil
 }
 
-func (repo *QueueRepository) MarkSoldOut(ctx context.Context, productID uuid.UUID, stock int) error {
+func (repo *QueueRepository) MarkSoldOut(ctx context.Context, itemID uuid.UUID, stock int) error {
 	const query = `
 		UPDATE queues SET status = 'SOLD_OUT'::queue_status, updated_at = now()
-		WHERE product_id = $1
+		WHERE item_id = $1
 		AND status = 'QUEUED'::queue_status
 		AND (
 			SELECT COUNT(*) FROM queues
-			WHERE product_id = $1 AND status = 'PURCHASED'::queue_status
+			WHERE item_id = $1 AND status = 'PURCHASED'::queue_status
 		) >= $2`
 
-	if _, err := repo.dbtx(ctx).Exec(ctx, query, productID, stock); err != nil {
+	if _, err := repo.dbtx(ctx).Exec(ctx, query, itemID, stock); err != nil {
 		return fmt.Errorf("mark sold out: %w", err)
 	}
 

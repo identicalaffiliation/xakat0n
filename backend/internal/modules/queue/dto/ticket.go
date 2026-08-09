@@ -25,7 +25,7 @@ type Ticket struct {
 func NewTicket(queue *domain.Queue, now time.Time) *Ticket {
 	t := &Ticket{
 		TicketID:   queue.ID,
-		ItemID:     queue.ProductID,
+		ItemID:     queue.ItemID,
 		Status:     queue.Status,
 		ExpiresAt:  queue.ExpiresAt,
 		CreatedAt:  queue.CreatedAt,

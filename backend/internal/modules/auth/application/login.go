@@ -36,7 +36,7 @@ func (u *LoginUsecase) Login(ctx context.Context, rawUsername string) (*dto.Logi
 
 	token, err := u.issuer.Issue(userID, username)
 	if err != nil {
-		u.logger.Error("failed to issue token", "user_id", userID.String(), "error", err)
+		u.logger.Error("failed to issue token", "userId", userID.String(), "error", err)
 		return nil, domain.ErrInternal
 	}
 

@@ -44,7 +44,7 @@ func TestQuitQueueUsecase_PromotesNextUser(t *testing.T) {
 		actualExpires *time.Time
 	)
 	err = db.QueryRow(context.Background(),
-		`SELECT status, expires_at FROM queues WHERE product_id = $1 AND user_id = $2`,
+		`SELECT status, expires_at FROM queues WHERE item_id = $1 AND user_id = $2`,
 		itemID, secondUserID,
 	).Scan(&status, &actualExpires)
 	require.NoError(t, err)

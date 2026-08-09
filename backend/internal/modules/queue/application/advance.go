@@ -66,7 +66,7 @@ func (u *AdvanceQueueUsecase) AdvanceQueue(ctx context.Context, itemID uuid.UUID
 	if err != nil {
 		u.logger.Error(
 			"failed to advance queue",
-			"item_id", itemID,
+			"itemId", itemID,
 			"error", err,
 		)
 		return err

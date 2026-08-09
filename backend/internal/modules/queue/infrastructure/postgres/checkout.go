@@ -15,9 +15,9 @@ import (
 func (repo *QueueRepository) TryStartCheckout(ctx context.Context, itemID, userID uuid.UUID) (*checkoutdomain.Queue, bool, error) {
 	const query = `
 		UPDATE queues SET status = 'CHECKOUT'::queue_status, updated_at = now()
-		WHERE product_id = $1 AND user_id = $2
+		WHERE item_id = $1 AND user_id = $2
 		AND status = 'OFFERED'::queue_status AND expires_at > now()
-		RETURNING id, product_id, user_id, status, created_at, updated_at, expires_at`
+		RETURNING id, item_id, user_id, status, created_at, updated_at, expires_at`
 
 	var q checkoutdomain.Queue
 	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID, userID).Scan(
@@ -49,9 +49,9 @@ func (repo *QueueRepository) FinalizeCheckoutResult(ctx context.Context, itemID,
 		UPDATE queues
 		SET status = CASE WHEN $4 THEN 'PURCHASED'::queue_status ELSE status END,
 		    updated_at = now()
-		WHERE id = $3 AND product_id = $1 AND user_id = $2
+		WHERE id = $3 AND item_id = $1 AND user_id = $2
 		AND status = 'CHECKOUT'::queue_status AND expires_at > now()
-		RETURNING id, product_id, user_id, status, created_at, updated_at, expires_at`
+		RETURNING id, item_id, user_id, status, created_at, updated_at, expires_at`
 
 	var q checkoutdomain.Queue
 	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID, userID, ticketID, paid).Scan(
@@ -77,13 +77,13 @@ func (repo *QueueRepository) FinalizeCheckoutResult(ctx context.Context, itemID,
 // FindTicket — отдельный метод от GetLatestTicket, возвращает домен потребителя (checkout).
 // Матчит конкретный тикет по id (не "последний по created_at" для пары) — та же причина,
 // что и у FinalizeCheckoutResult: нужно диагностировать ошибку именно про тот тикет,
-// про который спросили, а не про случайно оказавшийся текущим. product_id/user_id
+// про который спросили, а не про случайно оказавшийся текущим. item_id/user_id
 // в WHERE остаются — без них чужой ticketId позволил бы получить чужой тикет.
 func (repo *QueueRepository) FindTicket(ctx context.Context, itemID, userID, ticketID uuid.UUID) (*checkoutdomain.Queue, error) {
 	const query = `
-		SELECT id, product_id, user_id, status, created_at, updated_at, expires_at
+		SELECT id, item_id, user_id, status, created_at, updated_at, expires_at
 		FROM queues
-		WHERE id = $3 AND product_id = $1 AND user_id = $2`
+		WHERE id = $3 AND item_id = $1 AND user_id = $2`
 
 	var q checkoutdomain.Queue
 	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID, userID, ticketID).Scan(
