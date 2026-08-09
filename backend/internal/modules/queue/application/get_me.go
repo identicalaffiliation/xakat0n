@@ -44,7 +44,7 @@ func (u *GetMyTicketUsecase) GetMyTicket(ctx context.Context, itemID, userID uui
 
 		u.logger.Error(
 			"failed to advance queue before reading ticket",
-			"item_id", itemID,
+			"itemId", itemID,
 			"error", err,
 		)
 		return nil, domain.ErrInternal
@@ -58,8 +58,8 @@ func (u *GetMyTicketUsecase) GetMyTicket(ctx context.Context, itemID, userID uui
 
 		u.logger.Error(
 			"failed to get latest ticket",
-			"item_id", itemID,
-			"user_id", userID,
+			"itemId", itemID,
+			"userId", userID,
 			"error", err,
 		)
 		return nil, domain.ErrInternal

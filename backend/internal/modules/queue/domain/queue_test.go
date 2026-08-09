@@ -14,7 +14,7 @@ func TestCreateQueueDomain(t *testing.T) {
 	actual := NewQueue(id1, id2)
 	assert.NotNil(t, actual)
 
-	assert.Equal(t, id1, actual.ProductID)
+	assert.Equal(t, id1, actual.ItemID)
 	assert.Equal(t, id2, actual.UserID)
 	assert.NotNil(t, actual.ID)
 }

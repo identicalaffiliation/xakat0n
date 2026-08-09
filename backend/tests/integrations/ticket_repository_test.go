@@ -34,7 +34,7 @@ func TestQueueRepository_CreateQueue(t *testing.T) {
 
 		assert.Equal(t, expected.ID, actual.ID)
 		assert.Equal(t, expected.UserID, actual.UserID)
-		assert.Equal(t, expected.ProductID, actual.ProductID)
+		assert.Equal(t, expected.ItemID, actual.ItemID)
 		assert.Equal(t, domain.QueueStatusQueued, actual.Status)
 		assert.Nil(t, actual.ExpiresAt)
 		assert.WithinDuration(t, time.Now().UTC(), actual.CreatedAt, time.Second)
@@ -83,7 +83,7 @@ func TestQueueRepository_TryPromoteUser(t *testing.T) {
 		promoted, ttl, err := repo.TryPromoteUser(
 			ctx,
 			expected.ID,
-			expected.ProductID,
+			expected.ItemID,
 			time.Second*2,
 		)
 		require.NoError(t, err)
@@ -116,14 +116,14 @@ func TestQueueRepository_TryPromoteUser(t *testing.T) {
 		_, _, err = repo.TryPromoteUser(
 			ctx,
 			expected.ID,
-			expected.ProductID,
+			expected.ItemID,
 			time.Second*2,
 		)
 		require.NoError(t, err)
 		promoted, _, err := repo.TryPromoteUser(
 			ctx,
 			expected.ID,
-			expected.ProductID,
+			expected.ItemID,
 			time.Second*2,
 		)
 		require.NoError(t, err)
@@ -140,17 +140,17 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
 		expected := domain.NewQueue(uuid.New(), uuid.New())
-		ensureItem(t, expected.ProductID)
+		ensureItem(t, expected.ItemID)
 
 		_, err := repo.CreateQueue(ctx, expected)
 		require.NoError(t, err)
 
-		actual, err := repo.QuitQueue(ctx, expected.ProductID, expected.UserID)
+		actual, err := repo.QuitQueue(ctx, expected.ItemID, expected.UserID)
 		require.NoError(t, err)
 		require.NotNil(t, actual)
 
 		assert.Equal(t, expected.ID, actual.ID)
-		assert.Equal(t, expected.ProductID, actual.ProductID)
+		assert.Equal(t, expected.ItemID, actual.ItemID)
 		assert.Equal(t, expected.UserID, actual.UserID)
 		assert.Equal(t, domain.QueueStatusCancelled, actual.Status)
 
@@ -166,21 +166,21 @@ func TestQueueRepository_QuitQueue(t *testing.T) {
 
 		ctx := context.Background()
 		repo := postgres.NewQueueRepository(db)
-		productID := uuid.New()
-		ensureItem(t, productID)
-		first := domain.NewQueue(productID, uuid.New())
-		second := domain.NewQueue(productID, uuid.New())
+		itemID := uuid.New()
+		ensureItem(t, itemID)
+		first := domain.NewQueue(itemID, uuid.New())
+		second := domain.NewQueue(itemID, uuid.New())
 
 		_, err := repo.CreateQueue(ctx, first)
 		require.NoError(t, err)
 		_, err = repo.CreateQueue(ctx, second)
 		require.NoError(t, err)
 
-		promoted, _, err := repo.TryPromoteUser(ctx, first.ID, productID, ttl)
+		promoted, _, err := repo.TryPromoteUser(ctx, first.ID, itemID, ttl)
 		require.NoError(t, err)
 		require.True(t, promoted)
 
-		cancelled, err := repo.QuitQueue(ctx, productID, first.UserID)
+		cancelled, err := repo.QuitQueue(ctx, itemID, first.UserID)
 		require.NoError(t, err)
 		require.NotNil(t, cancelled)
 		assert.Equal(t, domain.QueueStatusCancelled, cancelled.Status)

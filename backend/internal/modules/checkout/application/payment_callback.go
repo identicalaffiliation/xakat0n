@@ -42,9 +42,9 @@ func (u *PaymentCallbackUsecase) HandleCallback(
 	if err != nil {
 		u.logger.Error(
 			"failed to finalize checkout result",
-			"item_id", itemID,
-			"user_id", userID,
-			"ticket_id", in.TicketID,
+			"itemId", itemID,
+			"userId", userID,
+			"ticketId", in.TicketID,
 			"error", err,
 		)
 		return nil, domain.ErrInternal
@@ -58,8 +58,8 @@ func (u *PaymentCallbackUsecase) HandleCallback(
 
 			u.logger.Error(
 				"failed to find ticket for disambiguation",
-				"item_id", itemID,
-				"user_id", userID,
+				"itemId", itemID,
+				"userId", userID,
 				"error", err,
 			)
 			return nil, domain.ErrInternal
@@ -70,7 +70,7 @@ func (u *PaymentCallbackUsecase) HandleCallback(
 
 	// Best-effort: ошибка тут не должна превращать уже закоммиченный успешный исход в 500.
 	if err := u.advance.AdvanceQueue(ctx, itemID, u.ttl); err != nil {
-		u.logger.Error("failed to advance queue after payment callback", "item_id", itemID, "error", err)
+		u.logger.Error("failed to advance queue after payment callback", "itemId", itemID, "error", err)
 	}
 
 	return dto.NewTicket(queue, time.Now().UTC()), nil

@@ -30,7 +30,8 @@ func New(pool tx.DBTX, logger ports.Logger) *Module {
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
-	r.With(httpx.Metrics).Get("/api/v1/items", httpapi.GetItems(m.getItemsUsecase))
-	r.With(httpx.Metrics).Get("/api/v1/items/{itemId}", httpapi.GetItem(m.getItemUsecase))
-	r.With(httpx.Metrics).Get("/api/v1/items/{itemId}/similar", httpapi.GetSimilar(m.getSimilarUsecase))
+	items := "/api/v1/items"
+	r.With(httpx.Metrics).Get(items, httpapi.GetItems(m.getItemsUsecase))
+	r.With(httpx.Metrics).Get(items+"/{itemId}", httpapi.GetItem(m.getItemUsecase))
+	r.With(httpx.Metrics).Get(items+"/{itemId}/similar", httpapi.GetSimilar(m.getSimilarUsecase))
 }

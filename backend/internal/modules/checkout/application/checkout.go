@@ -42,7 +42,7 @@ func (u *CheckoutUsecase) StartCheckout(ctx context.Context, itemID, userID uuid
 			return nil, domain.ErrItemNotFound
 		}
 
-		u.logger.Error("failed to advance queue before checkout", "item_id", itemID, "error", err)
+		u.logger.Error("failed to advance queue before checkout", "itemId", itemID, "error", err)
 		return nil, domain.ErrInternal
 	}
 
@@ -52,7 +52,7 @@ func (u *CheckoutUsecase) StartCheckout(ctx context.Context, itemID, userID uuid
 			return nil, domain.ErrItemNotFound
 		}
 
-		u.logger.Error("failed to check item limited flag", "item_id", itemID, "error", err)
+		u.logger.Error("failed to check item limited flag", "itemId", itemID, "error", err)
 		return nil, domain.ErrInternal
 	}
 
@@ -62,7 +62,7 @@ func (u *CheckoutUsecase) StartCheckout(ctx context.Context, itemID, userID uuid
 
 	queue, ok, err := u.queue.TryStartCheckout(ctx, itemID, userID)
 	if err != nil {
-		u.logger.Error("failed to start checkout", "item_id", itemID, "user_id", userID, "error", err)
+		u.logger.Error("failed to start checkout", "itemId", itemID, "userId", userID, "error", err)
 		return nil, domain.ErrInternal
 	}
 

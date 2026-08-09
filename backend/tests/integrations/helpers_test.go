@@ -28,8 +28,8 @@ func seedItem(t *testing.T, itemID uuid.UUID, stock int) {
 	require.NoError(t, err)
 }
 
-// ensureItem гарантирует наличие строки items под productID — начиная с миграции,
-// добавившей queues.product_id REFERENCES items(id), INSERT в queues без существующего
+// ensureItem гарантирует наличие строки items под itemID — начиная с миграции,
+// добавившей queues.item_id REFERENCES items(id), INSERT в queues без существующего
 // item бьётся об FK. Идемпотентно (ON CONFLICT DO NOTHING): если тест уже вызвал seedItem
 // с нужным stock, эта строка не трогается; если нет (репозиторным тестам queues stock не
 // важен) — подставляется безобидная заглушка.
@@ -51,21 +51,21 @@ func ensureItem(t *testing.T, itemID uuid.UUID) {
 // статусов вроде PURCHASED, которые в проде некому выставлять до появления checkout-модуля).
 func seedTicket(
 	t *testing.T,
-	id, productID, userID uuid.UUID,
+	id, itemID, userID uuid.UUID,
 	status domain.QueueStatus,
 	createdAt time.Time,
 	expiresAt *time.Time,
 ) {
 	t.Helper()
 
-	ensureItem(t, productID)
+	ensureItem(t, itemID)
 
 	_, err := db.Exec(
 		context.Background(),
-		`INSERT INTO queues (id, product_id, user_id, status, created_at, updated_at, expires_at)
+		`INSERT INTO queues (id, item_id, user_id, status, created_at, updated_at, expires_at)
 		 VALUES ($1, $2, $3, $4::queue_status, $5, $5, $6)`,
 		id,
-		productID,
+		itemID,
 		userID,
 		status,
 		createdAt,

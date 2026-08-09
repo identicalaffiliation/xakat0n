@@ -43,16 +43,16 @@ func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UU
 			u.logger.Warn(
 				"queue not found",
 				"error", err,
-				"userID", userID,
-				"product_id", itemID,
+				"userId", userID,
+				"itemId", itemID,
 			)
 			return nil, err
 		}
 		u.logger.Error(
 			"failed to Quit from queue",
 			"error", err,
-			"userID", userID,
-			"product_id", itemID,
+			"userId", userID,
+			"itemId", itemID,
 		)
 		return nil, domain.ErrInternal
 	}
@@ -61,8 +61,8 @@ func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UU
 	if err != nil {
 		u.logger.Error(
 			"error advance queue",
-			"itemID", itemID,
-			"userID", userID,
+			"itemId", itemID,
+			"userId", userID,
 		)
 	}
 

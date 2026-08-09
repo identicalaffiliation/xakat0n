@@ -8,7 +8,7 @@ import (
 
 type Queue struct {
 	ID        uuid.UUID
-	ProductID uuid.UUID
+	ItemID    uuid.UUID
 	UserID    uuid.UUID
 	Status    QueueStatus
 	CreatedAt time.Time
@@ -16,10 +16,10 @@ type Queue struct {
 	ExpiresAt *time.Time
 }
 
-func NewQueue(productID, userID uuid.UUID) *Queue {
+func NewQueue(itemID, userID uuid.UUID) *Queue {
 	return &Queue{
-		ID:        uuid.New(),
-		ProductID: productID,
-		UserID:    userID,
+		ID:     uuid.New(),
+		ItemID: itemID,
+		UserID: userID,
 	}
 }
