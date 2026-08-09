@@ -102,6 +102,11 @@ tasks:
     cmds:
       - docker compose logs --follow frontend
 
+  tests:run:
+    cmds:
+      - docker compose build tests
+      - docker compose run --rm tests
+
   migrator:up:
     desc: migrations up
     cmds:

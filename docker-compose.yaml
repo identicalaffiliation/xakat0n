@@ -100,6 +100,23 @@ services:
     networks:
       - xakat0n
 
+  tests:
+    build:
+      context: ./tests
+    environment:
+      API_URL: ${API_URL:-http://backend:8080/api/v1}
+      FRONTEND_URL: ${FRONTEND_URL:-http://frontend:80}
+      DB_URL: ${DB_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
+    networks:
+      - xakat0n
+
 volumes:
   db_data:
   vmdata:
