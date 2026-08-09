@@ -47,14 +47,14 @@ func (l *LogCtx) WrapError(ctx context.Context, err error) error {
 
 	maps.Copy(copied, fields)
 
-	return &errorWithLogContext{
+	return &logContextError{
 		err:    err,
 		fields: copied,
 	}
 }
 
 func (l *LogCtx) ContextFromError(ctx context.Context, err error) context.Context {
-	var wrapped *errorWithLogContext
+	var wrapped *logContextError
 	if !errors.As(err, &wrapped) {
 		return ctx
 	}

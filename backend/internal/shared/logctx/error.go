@@ -1,14 +1,14 @@
 package logctx
 
-type errorWithLogContext struct {
+type logContextError struct {
 	err    error
 	fields Fields
 }
 
-func (e *errorWithLogContext) Error() string {
+func (e *logContextError) Error() string {
 	return e.err.Error()
 }
 
-func (e *errorWithLogContext) Unwrap() error {
+func (e *logContextError) Unwrap() error {
 	return e.err
 }

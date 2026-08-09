@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 )
 
