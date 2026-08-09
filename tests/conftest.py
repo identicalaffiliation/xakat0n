@@ -1,13 +1,36 @@
 import os
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import APIRequestContext, Page, Playwright
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 API_URL = os.environ.get("API_URL", "http://localhost:8080/api/v1")
-DB_URL = os.environ.get("DB_URL")
+
+
+def _db_url_from_env_file() -> str | None:
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    if not env_file.exists():
+        return None
+
+    values: dict[str, str] = {}
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        values[key.strip()] = value.strip().strip('"').strip("'")
+
+    user = values.get("PG_USER", "postgres")
+    password = values.get("PG_PASSWORD", "change_me")
+    port = values.get("PG_PORT", "5433")
+    name = values.get("PG_NAME", "xakat0n")
+    return f"postgresql://{user}:{password}@localhost:{port}/{name}?sslmode=disable"
+
+
+DB_URL = os.environ.get("DB_URL") or _db_url_from_env_file()
 
 
 def unique_username(prefix: str = "test") -> str:

@@ -4,8 +4,8 @@ from playwright.sync_api import APIRequestContext, Browser, Page
 
 from helpers import seed_item_id
 
-SEED_LIMITED = "iPhone 16 Pro"
-SEED_REGULAR = "Футбольный мяч"
+SEED_LIMITED = "Сушёные комары, 1 кг"
+SEED_REGULAR = "Сушёные тараканы, 1 кг"
 
 
 def open_product(page: Page, title: str) -> str:
@@ -49,13 +49,12 @@ def test_buy_limited_item_gets_offer_and_checkout(
     page.get_by_role("heading", name="Товар освободился!").wait_for()
 
     page.get_by_role("button", name="Перейти к оформлению").click()
-    page.wait_for_url(f"**/product/{item_id}/queue")
+    page.wait_for_url(f"**/product/{item_id}/checkout")
     page.get_by_text("Оформление заказа").wait_for()
-    page.get_by_text("Осталось времени для оплаты").wait_for()
+    page.get_by_role("heading", name=SEED_LIMITED).wait_for()
 
     page.get_by_role("button", name="Отменить заказ").click()
-    page.wait_for_url(f"**/product/{item_id}")
-    page.get_by_role("button", name="Купить").wait_for()
+    page.wait_for_url("**/products")
 
 
 def test_second_user_queues_while_first_holds_right(

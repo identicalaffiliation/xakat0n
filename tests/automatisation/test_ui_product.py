@@ -1,8 +1,8 @@
 import pytest
 from playwright.sync_api import Page
 
-SEED_LIMITED = "iPhone 16 Pro"
-SEED_REGULAR = "Футбольный мяч"
+SEED_LIMITED = "Сушёные комары, 1 кг"
+SEED_REGULAR = "Сушёные тараканы, 1 кг"
 
 
 def open_product(page: Page, title: str) -> str:
@@ -20,14 +20,14 @@ def test_limited_product_detail_shows_badge(product_page: Page) -> None:
     open_product(product_page, SEED_LIMITED)
     product_page.get_by_role("button", name="Купить").wait_for()
     product_page.get_by_text("Лимитированный").wait_for()
-    product_page.get_by_text("Категория: Электроника").wait_for()
+    product_page.get_by_text("Категория: Сушёные насекомые").wait_for()
 
 
 def test_regular_product_has_no_limited_badge(product_page: Page) -> None:
     open_product(product_page, SEED_REGULAR)
     product_page.get_by_role("button", name="Купить").wait_for()
     assert product_page.get_by_text("Лимитированный").count() == 0
-    product_page.get_by_text("Категория: Спорт").wait_for()
+    product_page.get_by_text("Категория: Сушёные насекомые").wait_for()
 
 
 def test_back_button_returns_to_catalog(product_page: Page) -> None:
