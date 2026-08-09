@@ -5,10 +5,9 @@ import {
   TextField, AppBar, Toolbar, IconButton
 } from '@mui/material'; 
 import { Person, FavoriteBorder } from '@mui/icons-material';
-import { getQueueStatus, cancelQueue, startCheckout, type Ticket } from '../../api/queue';
+import { getQueueStatus, cancelQueue, startCheckout, paymentCallback, type Ticket } from '../../api/queue';
 import { getSimilar, type Item } from '../../api/items';
 import { getProductImage } from '../../utils/imageUtils';
-
 const QueuePage: React.FC = () => {
   const { id } = useParams<{ id: string }>(); 
   const navigate = useNavigate();
@@ -148,7 +147,25 @@ const QueuePage: React.FC = () => {
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Промокод</Typography><Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography></Paper>
                       <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Скидка по карте</Typography><Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography></Paper>
                     </Box>
-                    <Button variant="contained" fullWidth sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1, '&:hover': { bgcolor: '#A169F7' } }} onClick={() => alert('Переход к оплате')}>Оплатить</Button>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
+                      onClick={async () => {
+                        if (!ticket) return;
+                        try {
+                          await paymentCallback(ticket.ticketId, 'paid');
+                          alert('Оплата прошла успешно!');
+                          // Можно обновить статус или перейти
+                          navigate(`/product/${ticket.itemId}`);
+                        } catch (error) {
+                          console.error('Ошибка оплаты:', error);
+                          alert('Ошибка при оплате');
+                        }
+                      }}
+                    >
+                      Оплатить
+                    </Button>
                     <Button variant="outlined" color="secondary" fullWidth sx={{ borderWidth: '3px' }} onClick={async () => { await cancelQueue(ticket.itemId); navigate(`/product/${ticket.itemId}`); }}>Отменить заказ</Button>
                   </Paper>
                 </Grid>
@@ -257,7 +274,7 @@ const QueuePage: React.FC = () => {
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#E8F5E9', border: '2px solid #00C853', mb: 3 }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: '#00C853', mb: 1 }}>Товар освободился!</Typography>
                     <Typography variant="body1" sx={{ mb: 2 }}>Вы можете перейти к оформлению заказа. У вас есть {formatTime(timer || 60)} на оплату.</Typography>
-                    <Button variant="contained" color="primary" size="large" onClick={async () => { await startCheckout(ticket.itemId); navigate(`/product/${ticket.itemId}/queue`); }}>Перейти к оформлению</Button>
+                    <Button variant="contained" color="primary" size="large" onClick={async () => { await startCheckout(ticket.itemId); navigate(`/product/${ticket.itemId}/checkout`); }}>Перейти к оформлению</Button>
                     <Button variant="outlined" color="secondary" sx={{ ml: 2 }} onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Отказаться</Button>
                   </Paper>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>

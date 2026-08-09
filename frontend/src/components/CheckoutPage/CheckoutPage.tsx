@@ -7,19 +7,34 @@ import {
 import { Person, FavoriteBorder } from '@mui/icons-material';
 import { getItem, type Item } from '../../api/items';
 import { getProductImage } from '../../utils/imageUtils';
+import { getQueueStatus, paymentCallback, type Ticket } from '../../api/queue';
 const CheckoutPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [ticket, setTicket] = useState<Ticket | null>(null);
   useEffect(() => {
     if (!id) return;
-    getItem(id)
-      .then(data => setProduct(data))
+    setLoading(true);
+    Promise.all([
+      getItem(id),
+      getQueueStatus(id).catch(() => null)
+    ])
+      .then(([productData, ticketData]) => {
+        setProduct(productData);
+        setTicket(ticketData);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
+  // useEffect(() => {
+  //   if (!id) return;
+  //   getItem(id)
+  //     .then(data => setProduct(data))
+  //     .catch(console.error)
+  //     .finally(() => setLoading(false));
+  // }, [id]);
 
   if (loading) return <Typography>Загрузка...</Typography>;
   if (!product) return <Typography>Товар не найден</Typography>;
@@ -84,7 +99,27 @@ const CheckoutPage: React.FC = () => {
                 <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Промокод</Typography><Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography></Paper>
                 <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Скидка по карте</Typography><Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography></Paper>
               </Box>
-              <Button variant="contained" fullWidth sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1, '&:hover': { bgcolor: '#A169F7' } }} onClick={() => alert('Переход к оплате')}>Оплатить</Button>
+              <Button
+                variant="contained"
+                fullWidth
+                sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
+                onClick={async () => {
+                  if (!ticket) {
+                    alert('Нет активной заявки для оплаты');
+                    return;
+                  }
+                  try {
+                    await paymentCallback(ticket.ticketId, 'paid');
+                    alert('Оплата прошла успешно!');
+                    navigate(`/product/${product.item_id}`);
+                  } catch (error) {
+                    console.error('Ошибка оплаты:', error);
+                    alert('Ошибка при оплате. Попробуйте ещё раз.');
+                  }
+                }}
+              >
+                Оплатить
+              </Button>
               <Button variant="outlined" color="secondary" fullWidth sx={{ borderWidth: '3px' }} onClick={() => navigate('/products')}>Отменить заказ</Button>
             </Paper>
           </Grid>
