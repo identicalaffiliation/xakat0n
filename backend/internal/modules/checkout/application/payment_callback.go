@@ -40,11 +40,9 @@ func (u *PaymentCallbackUsecase) HandleCallback(
 ) (*dto.Ticket, error) {
 	queue, ok, err := u.queue.FinalizeCheckoutResult(ctx, itemID, userID, in.TicketID, in.Paid())
 	if err != nil {
-		u.logger.Error(
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx,
 			"failed to finalize checkout result",
-			"item_id", itemID,
-			"user_id", userID,
-			"ticket_id", in.TicketID,
 			"error", err,
 		)
 		return nil, domain.ErrInternal
@@ -56,10 +54,9 @@ func (u *PaymentCallbackUsecase) HandleCallback(
 				return nil, domain.ErrTicketNotFound
 			}
 
-			u.logger.Error(
+			ctx = u.logger.ContextFromError(ctx, err)
+			u.logger.ErrorContext(ctx,
 				"failed to find ticket for disambiguation",
-				"item_id", itemID,
-				"user_id", userID,
 				"error", err,
 			)
 			return nil, domain.ErrInternal
@@ -70,7 +67,8 @@ func (u *PaymentCallbackUsecase) HandleCallback(
 
 	// Best-effort: ошибка тут не должна превращать уже закоммиченный успешный исход в 500.
 	if err := u.advance.AdvanceQueue(ctx, itemID, u.ttl); err != nil {
-		u.logger.Error("failed to advance queue after payment callback", "item_id", itemID, "error", err)
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx, "failed to advance queue after payment callback", "error", err)
 	}
 
 	return dto.NewTicket(queue, time.Now().UTC()), nil

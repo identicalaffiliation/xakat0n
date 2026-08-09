@@ -10,18 +10,34 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 	pgerrors "github.com/identicalaffiliation/xakat0n/backend/internal/shared/postgres"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
 )
 
 type QueueRepository struct {
-	pool tx.DBTX
+	pool   tx.DBTX
+	logger ports.Logger
 }
 
-func NewQueueRepository(pool tx.DBTX) *QueueRepository {
-	return &QueueRepository{
-		pool: pool,
+func NewQueueRepository(pool tx.DBTX, loggers ...ports.Logger) *QueueRepository {
+	var logger ports.Logger
+	if len(loggers) != 0 {
+		logger = loggers[0]
 	}
+
+	return &QueueRepository{
+		pool:   pool,
+		logger: logger,
+	}
+}
+
+func (repo *QueueRepository) wrapError(ctx context.Context, err error) error {
+	if repo.logger == nil {
+		return err
+	}
+
+	return repo.logger.WrapError(ctx, err)
 }
 
 func (repo *QueueRepository) dbtx(ctx context.Context) tx.DBTX {
@@ -53,10 +69,10 @@ func (repo *QueueRepository) CreateQueue(ctx context.Context, queue *domain.Queu
 	)
 	if err != nil {
 		if pgerrors.IsUniqueViolation(err) {
-			return nil, domain.ErrUserAlreadyQueued
+			return nil, repo.wrapError(ctx, domain.ErrUserAlreadyQueued)
 		}
 
-		return nil, fmt.Errorf("queue user: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("queue user: %w", err))
 	}
 
 	return &created, nil
@@ -88,7 +104,7 @@ func (repo *QueueRepository) GetActiveTicket(
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("get active ticket: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("get active ticket: %w", err))
 	}
 
 	return &q, nil
@@ -101,7 +117,7 @@ func (repo *QueueRepository) IsSoldOut(ctx context.Context, productID uuid.UUID,
 
 	var purchased int
 	if err := repo.dbtx(ctx).QueryRow(ctx, query, productID).Scan(&purchased); err != nil {
-		return false, fmt.Errorf("is sold out: %w", err)
+		return false, repo.wrapError(ctx, fmt.Errorf("is sold out: %w", err))
 	}
 
 	return purchased >= stock, nil
@@ -124,7 +140,7 @@ func (repo *QueueRepository) CountPurchased(ctx context.Context, itemIDs []uuid.
 
 	rows, err := repo.dbtx(ctx).Query(ctx, query, itemIDs)
 	if err != nil {
-		return nil, fmt.Errorf("count purchased: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("count purchased: %w", err))
 	}
 	defer rows.Close()
 
@@ -132,14 +148,14 @@ func (repo *QueueRepository) CountPurchased(ctx context.Context, itemIDs []uuid.
 		var productID uuid.UUID
 		var count int
 		if err := rows.Scan(&productID, &count); err != nil {
-			return nil, fmt.Errorf("scan count purchased: %w", err)
+			return nil, repo.wrapError(ctx, fmt.Errorf("scan count purchased: %w", err))
 		}
 
 		counts[productID] = count
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("count purchased: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("count purchased: %w", err))
 	}
 
 	return counts, nil
@@ -198,7 +214,7 @@ func (repo *QueueRepository) TryPromoteUser(
 			return false, nil, nil
 		}
 
-		return false, nil, fmt.Errorf("promote user: %w", err)
+		return false, nil, repo.wrapError(ctx, fmt.Errorf("promote user: %w", err))
 	}
 
 	return true, &expiresAt, nil

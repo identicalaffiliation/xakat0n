@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/config"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/logctx"
 )
 
 const (
@@ -22,7 +23,12 @@ var (
 	stdout = os.Stdout
 )
 
-func NewLogger(cfg *config.APIConfig) (*slog.Logger, error) {
+type Logging struct {
+	*slog.Logger
+	context *logctx.LogCtx
+}
+
+func NewLogger(cfg *config.APIConfig) (*Logging, error) {
 	levels := map[string]slog.Level{
 		LevelDebug: slog.LevelDebug,
 		LevelError: slog.LevelError,
@@ -43,13 +49,15 @@ func NewLogger(cfg *config.APIConfig) (*slog.Logger, error) {
 		}),
 	}
 
-	h, ok := handlers[cfg.LoggerConfig.Format]
+	handler, ok := handlers[cfg.LoggerConfig.Format]
 	if !ok {
 		return nil, ErrInvalidLoggerFormat
 	}
+	logContext := logctx.NewLogCtx()
+	handler = NewHandlerMiddleware(handler, logContext)
 
-	h = NewHandlerMiddleware(h)
-
-	slogger := slog.New(h)
-	return slogger, nil
+	return &Logging{
+		Logger:  slog.New(handler),
+		context: logContext,
+	}, nil
 }

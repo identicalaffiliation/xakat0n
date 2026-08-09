@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/logctx"
 )
 
 type quitUsecaseStub struct {
@@ -42,9 +44,13 @@ func (s quitTokenVerifierStub) Verify(string) (uuid.UUID, error) {
 }
 
 func quitRouter(usecase *quitUsecaseStub, userID uuid.UUID) http.Handler {
+	logging := struct {
+		*slog.Logger
+		*logctx.LogCtx
+	}{slog.Default(), logctx.NewLogCtx()}
 	router := chi.NewRouter()
-	router.With(httpx.JWTAuth(quitTokenVerifierStub{userID: userID})).
-		Delete("/api/v1/items/{itemId}/queue/me", QuitQueue(usecase))
+	router.With(httpx.JWTAuth(&logging, quitTokenVerifierStub{userID: userID})).
+		Delete("/api/v1/items/{itemId}/queue/me", QuitQueue(&logging, usecase))
 	return router
 }
 

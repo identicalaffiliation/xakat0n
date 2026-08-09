@@ -16,7 +16,7 @@ func (repo *QueueRepository) ExpireStale(ctx context.Context, productID uuid.UUI
 		AND expires_at < now()`
 
 	if _, err := repo.dbtx(ctx).Exec(ctx, query, productID); err != nil {
-		return fmt.Errorf("expire stale: %w", err)
+		return repo.wrapError(ctx, fmt.Errorf("expire stale: %w", err))
 	}
 
 	return nil
@@ -30,7 +30,7 @@ func (repo *QueueRepository) CountTaken(ctx context.Context, productID uuid.UUID
 
 	var count int
 	if err := repo.dbtx(ctx).QueryRow(ctx, query, productID).Scan(&count); err != nil {
-		return 0, fmt.Errorf("count taken: %w", err)
+		return 0, repo.wrapError(ctx, fmt.Errorf("count taken: %w", err))
 	}
 
 	return count, nil
@@ -57,7 +57,7 @@ func (repo *QueueRepository) PromoteNext(
 
 	tag, err := repo.dbtx(ctx).Exec(ctx, query, productID, freeSlots, ttlStr)
 	if err != nil {
-		return 0, fmt.Errorf("promote next: %w", err)
+		return 0, repo.wrapError(ctx, fmt.Errorf("promote next: %w", err))
 	}
 
 	return tag.RowsAffected(), nil
@@ -74,7 +74,7 @@ func (repo *QueueRepository) MarkSoldOut(ctx context.Context, productID uuid.UUI
 		) >= $2`
 
 	if _, err := repo.dbtx(ctx).Exec(ctx, query, productID, stock); err != nil {
-		return fmt.Errorf("mark sold out: %w", err)
+		return repo.wrapError(ctx, fmt.Errorf("mark sold out: %w", err))
 	}
 
 	return nil

@@ -39,9 +39,9 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrQueueNotFound
+			return nil, repo.wrapError(ctx, domain.ErrQueueNotFound)
 		}
-		return nil, fmt.Errorf("quit queue: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("quit queue: %w", err))
 	}
 	return &queue, nil
 }

@@ -2,7 +2,6 @@ package integrations
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -19,11 +18,12 @@ import (
 )
 
 func newCheckoutUsecase() *checkoutapplication.CheckoutUsecase {
-	queueRepo := postgres.NewQueueRepository(db)
-	itemsRepo := itemspostgres.NewItemsRepository(db)
-	advance := checkout.NewAdvanceAdapter(newAdvanceQueueUsecase())
+	logging := newTestLogger()
+	queueRepo := postgres.NewQueueRepository(db, logging)
+	itemsRepo := itemspostgres.NewItemsRepository(db, logging)
+	advance := checkout.NewAdvanceAdapter(newAdvanceQueueUsecase(logging))
 
-	return checkoutapplication.NewCheckoutUsecase(advance, itemsRepo, queueRepo, slog.Default(), 3*time.Second)
+	return checkoutapplication.NewCheckoutUsecase(advance, itemsRepo, queueRepo, logging, 3*time.Second)
 }
 
 func TestCheckoutUsecase_Success(t *testing.T) {

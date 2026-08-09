@@ -2,7 +2,6 @@ package integrations
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -16,10 +15,16 @@ import (
 )
 
 func newGetMyTicketUsecase() *application.GetMyTicketUsecase {
-	queueRepo := postgres.NewQueueRepository(db)
-	advanceUsecase := newAdvanceQueueUsecase()
+	logging := newTestLogger()
+	queueRepo := postgres.NewQueueRepository(db, logging)
+	advanceUsecase := newAdvanceQueueUsecase(logging)
 
-	return application.NewGetMyTicketUsecase(advanceUsecase, queueRepo, slog.Default(), 3*time.Second)
+	return application.NewGetMyTicketUsecase(
+		advanceUsecase,
+		queueRepo,
+		logging,
+		3*time.Second,
+	)
 }
 
 func TestGetMyTicketUsecase_Queued(t *testing.T) {

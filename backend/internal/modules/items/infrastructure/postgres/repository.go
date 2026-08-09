@@ -10,18 +10,32 @@ import (
 
 	checkoutdomain "github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/ports"
 	queuedomain "github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
 )
 
 type ItemsRepository struct {
-	pool tx.DBTX
+	pool   tx.DBTX
+	logger ports.Logger
 }
 
-func NewItemsRepository(pool tx.DBTX) *ItemsRepository {
-	return &ItemsRepository{
-		pool: pool,
+func NewItemsRepository(pool tx.DBTX, loggers ...ports.Logger) *ItemsRepository {
+	var logger ports.Logger
+	if len(loggers) > 0 {
+		logger = loggers[0]
 	}
+	return &ItemsRepository{
+		pool:   pool,
+		logger: logger,
+	}
+}
+
+func (repo *ItemsRepository) wrapError(ctx context.Context, err error) error {
+	if repo.logger == nil {
+		return err
+	}
+	return repo.logger.WrapError(ctx, err)
 }
 
 func (repo *ItemsRepository) dbtx(ctx context.Context) tx.DBTX {
@@ -45,7 +59,7 @@ func (repo *ItemsRepository) CreateItem(ctx context.Context, item *domain.Item) 
 		item.IsLimited,
 		item.Stock,
 	); err != nil {
-		return fmt.Errorf("create item: %w", err)
+		return repo.wrapError(ctx, fmt.Errorf("create item: %w", err))
 	}
 
 	return nil
@@ -55,10 +69,11 @@ func (repo *ItemsRepository) GetAll(ctx context.Context) ([]*domain.Item, error)
 	const query string = `SELECT * FROM items ORDER BY created_at DESC`
 
 	var items []*domain.Item
-	rows, err := repo.pool.Query(ctx, query)
+	rows, err := repo.dbtx(ctx).Query(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("get items: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("get items: %w", err))
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var item domain.Item
@@ -73,14 +88,14 @@ func (repo *ItemsRepository) GetAll(ctx context.Context) ([]*domain.Item, error)
 			&item.CreatedAt,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("scan item: %w", err)
+			return nil, repo.wrapError(ctx, fmt.Errorf("scan item: %w", err))
 		}
 
 		items = append(items, &item)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("scan items: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("scan items: %w", err))
 	}
 
 	return items, nil
@@ -89,7 +104,7 @@ func (repo *ItemsRepository) GetAll(ctx context.Context) ([]*domain.Item, error)
 func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) (*domain.Item, error) {
 	const query = `SELECT * FROM items WHERE id = $1`
 	var item domain.Item
-	err := repo.pool.QueryRow(ctx, query, itemID).Scan(
+	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID).Scan(
 		&item.ID,
 		&item.Title,
 		&item.Description,
@@ -101,10 +116,10 @@ func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) 
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrItemNotFound
+			return nil, repo.wrapError(ctx, domain.ErrItemNotFound)
 		}
 
-		return nil, fmt.Errorf("get item: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("get item: %w", err))
 	}
 
 	return &item, nil
@@ -118,10 +133,10 @@ func (repo *ItemsRepository) IsLimited(ctx context.Context, itemID uuid.UUID) (b
 	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID).Scan(&isLimited)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return false, checkoutdomain.ErrItemNotFound
+			return false, repo.wrapError(ctx, checkoutdomain.ErrItemNotFound)
 		}
 
-		return false, fmt.Errorf("is limited: %w", err)
+		return false, repo.wrapError(ctx, fmt.Errorf("is limited: %w", err))
 	}
 
 	return isLimited, nil
@@ -137,10 +152,10 @@ func (repo *ItemsRepository) LockStock(ctx context.Context, itemID uuid.UUID) (*
 	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID).Scan(&item.ID, &item.Stock, &item.IsLimited)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, queuedomain.ErrItemNotFound
+			return nil, repo.wrapError(ctx, queuedomain.ErrItemNotFound)
 		}
 
-		return nil, fmt.Errorf("lock stock: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("lock stock: %w", err))
 	}
 
 	return &item, nil

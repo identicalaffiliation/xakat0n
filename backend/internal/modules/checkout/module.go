@@ -19,26 +19,38 @@ import (
 type Module struct {
 	checkoutUsecase ports.CheckoutUsecase
 	paymentUsecase  ports.PaymentCallbackUsecase
+	logger          ports.Logger
 }
 
 // txManager нужен только для сборки внутреннего queue/application.AdvanceQueueUsecase.
-func New(pool tx.DBTX, txManager queueports.TxManager, logger ports.Logger, ttl time.Duration) *Module {
-	queueRepo := queuepostgres.NewQueueRepository(pool)
-	itemsRepo := itemspostgres.NewItemsRepository(pool)
+func New(
+	pool tx.DBTX,
+	txManager queueports.TxManager,
+	logger ports.Logger,
+	ttl time.Duration,
+) *Module {
+	queueRepo := queuepostgres.NewQueueRepository(pool, logger)
+	itemsRepo := itemspostgres.NewItemsRepository(pool, logger)
 
-	advanceUsecase := queueapplication.NewAdvanceQueueUsecase(itemsRepo, queueRepo, txManager, logger)
+	advanceUsecase := queueapplication.NewAdvanceQueueUsecase(
+		itemsRepo,
+		queueRepo,
+		txManager,
+		logger,
+	)
 	advance := NewAdvanceAdapter(advanceUsecase)
 
 	return &Module{
 		checkoutUsecase: application.NewCheckoutUsecase(advance, itemsRepo, queueRepo, logger, ttl),
 		paymentUsecase:  application.NewPaymentCallbackUsecase(advance, queueRepo, logger, ttl),
+		logger:          logger,
 	}
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	checkoutRoute := fmt.Sprintf("/api/v1/items/{%s}/checkout", httpapi.ItemIdMuxPattern)
-	r.Post(checkoutRoute, httpapi.StartCheckout(m.checkoutUsecase))
+	r.Post(checkoutRoute, httpapi.StartCheckout(m.logger, m.checkoutUsecase))
 
 	callbackRoute := fmt.Sprintf("/api/v1/items/{%s}/payment/callback", httpapi.ItemIdMuxPattern)
-	r.Post(callbackRoute, httpapi.PaymentCallback(m.paymentUsecase))
+	r.Post(callbackRoute, httpapi.PaymentCallback(m.logger, m.paymentUsecase))
 }

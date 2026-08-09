@@ -9,6 +9,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 )
 
@@ -35,19 +36,20 @@ func NewGetMyTicketUsecase(
 
 func (u *GetMyTicketUsecase) GetMyTicket(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error) {
 	if err := u.advance.AdvanceQueue(ctx, itemID, u.ttl); err != nil {
+		ctx = u.logger.ContextFromError(ctx, err)
 		if errors.Is(err, domain.ErrItemNotFound) {
 			// Контракт GET /queue/me отдельного 404 под "товар не найден" не
 			// определяет — только TicketNotFound. Раз товара нет, заявки по
 			// нему тем более нет.
-			return nil, domain.ErrTicketNotFound
+			return nil, u.logger.WrapError(ctx, domain.ErrTicketNotFound)
 		}
 
-		u.logger.Error(
+		u.logger.ErrorContext(
+			ctx,
 			"failed to advance queue before reading ticket",
-			"item_id", itemID,
 			"error", err,
 		)
-		return nil, domain.ErrInternal
+		return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 	}
 
 	ticket, err := u.repo.GetLatestTicket(ctx, itemID, userID)
@@ -56,14 +58,14 @@ func (u *GetMyTicketUsecase) GetMyTicket(ctx context.Context, itemID, userID uui
 			return nil, domain.ErrTicketNotFound
 		}
 
-		u.logger.Error(
+		u.logger.ErrorContext(
+			ctx,
 			"failed to get latest ticket",
-			"item_id", itemID,
-			"user_id", userID,
 			"error", err,
 		)
-		return nil, domain.ErrInternal
+		return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 	}
+	ctx = logging.WithQueueID(ctx, u.logger, ticket.ID)
 
 	now := time.Now().UTC()
 	result := dto.NewTicket(ticket, now)
@@ -71,14 +73,14 @@ func (u *GetMyTicketUsecase) GetMyTicket(ctx context.Context, itemID, userID uui
 	if ticket.Status == domain.QueueStatusQueued {
 		ahead, err := u.repo.CountQueuedAhead(ctx, itemID, ticket.CreatedAt)
 		if err != nil {
-			u.logger.Error("failed to count queued ahead", "error", err)
-			return nil, domain.ErrInternal
+			u.logger.ErrorContext(ctx, "failed to count queued ahead", "error", err)
+			return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 		}
 
 		nextFree, err := u.repo.NextSlotFreeAt(ctx, itemID)
 		if err != nil {
-			u.logger.Error("failed to get next slot free at", "error", err)
-			return nil, domain.ErrInternal
+			u.logger.ErrorContext(ctx, "failed to get next slot free at", "error", err)
+			return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 		}
 
 		result.SetQueuedFields(ahead, nextFree, now)

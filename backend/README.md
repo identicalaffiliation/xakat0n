@@ -113,6 +113,188 @@ presentation/http  →  application  →  ports  ←  infrastructure/postgres
    могут быть уже применены на чьей-то локальной БД, переименование ломает версионирование
    goose).
 
+## Как использовать логгер
+
+Логгер построен на `log/slog`. Поля накапливаются в `context.Context`, а
+`logger.HandlerMiddleware` автоматически добавляет их в каждую запись, сделанную через
+`DebugContext`, `InfoContext`, `WarnContext` или `ErrorContext`.
+
+### Инициализация
+
+В `cmd/api/main.go` создаётся один объект `logger.Logging` на всё приложение. Внутри него
+находятся `*slog.Logger` и `*logctx.LogCtx`:
+
+```go
+slogger, err := logger.NewLogger(cfg)
+if err != nil {
+	log.Fatal(err)
+}
+```
+
+В конструкторы модулей передаётся только этот объект:
+
+```go
+items := itemsModule.New(pool, slogger)
+queue := queueModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
+```
+
+Модули не зависят от конкретной структуры `logger.Logging`. Они объявляют единый интерфейс
+`ports.Logger`, который содержит и методы записи, и методы работы с log context:
+
+```go
+type Logger interface {
+	DebugContext(ctx context.Context, msg string, args ...any)
+	InfoContext(ctx context.Context, msg string, args ...any)
+	WarnContext(ctx context.Context, msg string, args ...any)
+	ErrorContext(ctx context.Context, msg string, args ...any)
+
+	WithField(ctx context.Context, key string, value any) context.Context
+	WrapError(ctx context.Context, err error) error
+	ContextFromError(ctx context.Context, err error) context.Context
+}
+```
+
+### Модуль `logctx`
+
+- **Поля добавляются один раз.** Когда `userID`, `itemID` или другой параметр становится
+  известен, он сохраняется в контексте и автоматически доступен всем нижележащим вызовам.
+- **Бизнес-логика не собирает поля перед каждым логом.** `HandlerMiddleware` самостоятельно
+  извлекает их из контекста, поэтому вызову `ErrorContext` достаточно передать сообщение и
+  ошибку.
+- **Контекст можно поднять наверх.** Обычный `context.Context` распространяется только вниз по
+  стеку. `WrapError` сохраняет поля внутри ошибки, а `ContextFromError` восстанавливает их на
+  верхнем слое, где выполняется логирование.
+- **Ошибку достаточно логировать один раз.** Repository и другие внутренние слои возвращают
+  обёрнутую ошибку, а верхний слой создаёт единственную запись со всеми накопленными полями.
+- **Сохраняется стандартная работа с ошибками Go.** Обёртка реализует `Unwrap`, поэтому после
+  добавления log context продолжают работать `errors.Is` и `errors.As`.
+- **Исходный контекст не изменяется.** `WithField` копирует карту полей и возвращает новый
+  контекст. Это позволяет безопасно создавать независимые ветки с разными параметрами.
+- **Повторное значение не создаёт новый контекст.** Если такой же ключ с таким же значением уже
+  существует, `WithField` возвращает исходный `context.Context` без лишнего копирования.
+- **Ошибка хранит снимок полей.** `WrapError` копирует текущую карту, поэтому последующие
+  изменения другого контекста не меняют параметры уже возвращённой ошибки.
+- **Поддерживаются произвольные структурированные поля.** В контекст можно положить UUID,
+  строку, число, срез или другое значение, которое поддерживает `slog`.
+
+### Добавление полей
+
+В каждом модуле, которому нужны собственные поля логирования, необходимо создать пакет
+`logging`, например `internal/modules/queue/logging`. Добавление полей должно выполняться только
+через именованные функции этого пакета:
+
+```go
+func WithItemID(ctx context.Context, logger ports.Logger, itemID uuid.UUID) context.Context {
+	if logger == nil || itemID == uuid.Nil {
+		return ctx
+	}
+	return logger.WithField(ctx, "itemID", itemID)
+}
+```
+
+Не вызывай `logger.WithField(ctx, "itemID", itemID)` напрямую в разных слоях. Если строковые
+ключи распределить по handlers, usecases и repositories, со временем появятся разные варианты
+одного имени, например `itemID`, `itemId` и `item_id`. Именованный метод хранит ключ в одном
+месте, задаёт единый формат значения и позволяет централизованно добавить валидацию или
+маскирование чувствительных данных.
+
+Поле следует добавлять сразу, как только значение стало известно, и только один раз. Не нужно
+ждать места, где произойдёт логирование: все вложенные вызовы должны заранее получить уже
+обогащённый контекст. Обычно первая подходящая точка выглядит так:
+
+- `userID` — в JWT middleware после проверки токена;
+- `itemID` — в HTTP handler после разбора path-параметра;
+- `ticketID` — после успешного декодирования тела запроса;
+- созданный `queueID` — в application-слое после создания очереди.
+
+Пример добавления поля сразу после того, как оно стало известно:
+
+```go
+itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
+if err != nil {
+	// вернуть 400
+}
+
+ctx := logging.WithItemID(r.Context(), logger, itemID)
+result, err := usecase.GetItem(ctx, itemID)
+```
+
+Все названия полей пишутся в camelCase: `userID`, `itemID`, `queueID`, `ticketID`.
+Повторно добавлять известное поле в usecase и repository не нужно. Если одинаковое поле всё же
+будет передано повторно, `LogCtx.WithField` вернёт исходный контекст без нового копирования.
+
+### Запись лога
+
+Всегда передавай контекст в логгер:
+
+```go
+u.logger.ErrorContext(ctx, "failed to get item", "error", err)
+```
+
+Поля из контекста добавятся автоматически. Поэтому не нужно повторять их аргументами:
+
+```go
+// Не нужно: itemID уже находится в ctx.
+u.logger.ErrorContext(ctx, "failed to get item", "itemID", itemID, "error", err)
+```
+
+Обычные методы `Error`, `Info`, `Warn` и `Debug` не используются: они не получают контекст и
+не смогут автоматически добавить его поля.
+
+### Передача полей наверх через ошибку
+
+Обычный `context.Context` распространяется только вниз: handler передаёт его в usecase, а
+usecase — в repository. Если новое поле стало известно внутри repository или другого глубокого
+вызова, простое присваивание нового контекста не изменит контекст вызывающего слоя.
+
+Пакет `shared/logctx` решает эту проблему и позволяет развернуть накопленные параметры лога
+обратно до верхнего слоя:
+
+1. `WrapError` сохраняет снимок полей текущего контекста внутри возвращаемой ошибки.
+2. Ошибка поднимается через остальные слои обычным `return err`.
+3. `ContextFromError` на слое, который пишет лог, достаёт поля из ошибки и возвращает
+   восстановленный контекст.
+
+Так параметры, известные глубоко в стеке вызовов, доходят до единственной итоговой записи в
+логе, хотя сам `context.Context` напрямую наверх не передаётся.
+
+### Ошибки repository-слоя
+
+Repository не пишет ошибку в лог самостоятельно, иначе одна ошибка будет залогирована на
+нескольких слоях. Он добавляет техническое описание и сохраняет текущие поля внутри ошибки:
+
+```go
+if err != nil {
+	return nil, repo.wrapError(ctx, fmt.Errorf("get item: %w", err))
+}
+```
+
+Где локальный helper безопасно работает и в тестах без логгера:
+
+```go
+func (repo *Repository) wrapError(ctx context.Context, err error) error {
+	if repo.logger == nil {
+		return err
+	}
+	return repo.logger.WrapError(ctx, err)
+}
+```
+
+Application-слой восстанавливает контекст перед единственной записью в лог:
+
+```go
+item, err := u.repo.GetItemByID(ctx, itemID)
+if err != nil {
+	ctx = u.logger.ContextFromError(ctx, err)
+	u.logger.ErrorContext(ctx, "failed to get item", "error", err)
+	return nil, domain.ErrInternal
+}
+```
+
+`WrapError` реализует `Unwrap`, поэтому проверки через `errors.Is` и `errors.As` продолжают
+работать. `WrapError` нужно вызывать только для возвращаемой ошибки; успешный результат
+оборачивать не требуется.
+
 ## RSA-ключи для JWT
 
 Auth-модуль подписывает JWT алгоритмом RS256. Для локального запуска создай пару RSA-ключей

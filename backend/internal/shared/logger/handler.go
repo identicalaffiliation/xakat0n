@@ -5,16 +5,24 @@ import (
 	"log/slog"
 )
 
-type HandlerMiddleware struct {
-	next slog.Handler
+type ContextFields interface {
+	FieldsFromContext(ctx context.Context) map[string]any
 }
 
-func NewHandlerMiddleware(next slog.Handler) *HandlerMiddleware {
-	return &HandlerMiddleware{next: next}
+type HandlerMiddleware struct {
+	next   slog.Handler
+	fields ContextFields
+}
+
+func NewHandlerMiddleware(next slog.Handler, fields ContextFields) *HandlerMiddleware {
+	return &HandlerMiddleware{
+		next:   next,
+		fields: fields,
+	}
 }
 
 func (h *HandlerMiddleware) Handle(ctx context.Context, rec slog.Record) error {
-	for k, v := range FieldsFromContext(ctx) {
+	for k, v := range h.fields.FieldsFromContext(ctx) {
 		rec.Add(k, v)
 	}
 	return h.next.Handle(ctx, rec)
@@ -25,9 +33,15 @@ func (h *HandlerMiddleware) Enabled(ctx context.Context, level slog.Level) bool 
 }
 
 func (h *HandlerMiddleware) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return &HandlerMiddleware{next: h.next.WithAttrs(attrs)} // не забыть обернуть, но осторожно
+	return &HandlerMiddleware{
+		next:   h.next.WithAttrs(attrs),
+		fields: h.fields,
+	}
 }
 
 func (h *HandlerMiddleware) WithGroup(name string) slog.Handler {
-	return &HandlerMiddleware{next: h.next.WithGroup(name)} // не забыть обернуть, но осторожно
+	return &HandlerMiddleware{
+		next:   h.next.WithGroup(name),
+		fields: h.fields,
+	}
 }

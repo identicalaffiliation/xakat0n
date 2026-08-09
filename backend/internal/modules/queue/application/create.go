@@ -7,6 +7,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 )
 
@@ -42,34 +43,36 @@ func (u *CreateQueueUsecase) CreateQueue(
 	in *dto.CreateQueueRequest,
 ) (*dto.Ticket, error) {
 	if err := u.advance.AdvanceQueue(ctx, in.ProductID, u.ttl); err != nil {
+		ctx = u.logger.ContextFromError(ctx, err)
 		if errors.Is(err, domain.ErrItemNotFound) {
-			return nil, domain.ErrItemNotFound
+			return nil, u.logger.WrapError(ctx, domain.ErrItemNotFound)
 		}
 
-		u.logger.Error(
+		u.logger.ErrorContext(
+			ctx,
 			"failed to advance queue before create",
-			"item_id", in.ProductID,
 			"error", err,
 		)
-		return nil, domain.ErrInternal
+		return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 	}
 
 	created, err := u.createQueueTicket(ctx, in)
 	if err != nil {
+		ctx = u.logger.ContextFromError(ctx, err)
 		if !errors.Is(err, domain.ErrQueueNotApplicable) &&
 			!errors.Is(err, domain.ErrItemSoldOut) &&
 			!errors.Is(err, domain.ErrItemNotFound) {
-			u.logger.Error(
+			u.logger.ErrorContext(
+				ctx,
 				"failed to put user in queue",
-				"item_id", in.ProductID,
-				"user_id", in.UserID,
 				"error", err,
 			)
 		}
 
-		return nil, err
+		return nil, u.logger.WrapError(ctx, err)
 	}
 
+	ctx = logging.WithQueueID(ctx, u.logger, created.ID)
 	return u.buildTicket(ctx, created)
 }
 
@@ -105,10 +108,9 @@ func (u *CreateQueueUsecase) createQueueTicket(
 			return nil
 		}
 
-		queue, err := u.repo.CreateQueue(
-			ctx,
-			domain.NewQueue(in.ProductID, in.UserID),
-		)
+		newQueue := domain.NewQueue(in.ProductID, in.UserID)
+		ctx = logging.WithQueueID(ctx, u.logger, newQueue.ID)
+		queue, err := u.repo.CreateQueue(ctx, newQueue)
 		if err != nil {
 			if errors.Is(err, domain.ErrUserAlreadyQueued) {
 				existing, getErr := u.repo.GetActiveTicket(
@@ -129,10 +131,9 @@ func (u *CreateQueueUsecase) createQueueTicket(
 
 			return err
 		}
-
 		taken, err := u.repo.CountTaken(ctx, in.ProductID)
 		if err != nil {
-			return err
+			return u.logger.WrapError(ctx, err)
 		}
 
 		if taken < item.Stock {
@@ -143,7 +144,7 @@ func (u *CreateQueueUsecase) createQueueTicket(
 				u.ttl,
 			)
 			if err != nil {
-				return err
+				return u.logger.WrapError(ctx, err)
 			}
 
 			if promoted {
@@ -169,14 +170,14 @@ func (u *CreateQueueUsecase) buildTicket(ctx context.Context, created domain.Que
 
 	ahead, err := u.repo.CountQueuedAhead(ctx, created.ProductID, created.CreatedAt)
 	if err != nil {
-		u.logger.Error("failed to count queued ahead", "error", err)
-		return nil, domain.ErrInternal
+		u.logger.ErrorContext(ctx, "failed to count queued ahead", "error", err)
+		return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 	}
 
 	nextFree, err := u.repo.NextSlotFreeAt(ctx, created.ProductID)
 	if err != nil {
-		u.logger.Error("failed to get next slot free at", "error", err)
-		return nil, domain.ErrInternal
+		u.logger.ErrorContext(ctx, "failed to get next slot free at", "error", err)
+		return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 	}
 
 	ticket.SetQueuedFields(ahead, nextFree, now)

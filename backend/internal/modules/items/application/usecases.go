@@ -28,7 +28,8 @@ func NewGetAllItemsUsecase(repo ports.ItemsRepository, soldOut ports.SoldOutChec
 func (u *GetAllItemsUsecase) GetAllItems(ctx context.Context) ([]dto.Item, error) {
 	items, err := u.repo.GetAll(ctx)
 	if err != nil {
-		u.logger.Error(
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx,
 			"failed to get all items",
 			"error", err,
 		)
@@ -37,7 +38,8 @@ func (u *GetAllItemsUsecase) GetAllItems(ctx context.Context) ([]dto.Item, error
 
 	soldOut, err := soldOutByItemID(ctx, u.soldOut, items)
 	if err != nil {
-		u.logger.Error(
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx,
 			"failed to count purchased items",
 			"error", err,
 		)
@@ -68,9 +70,9 @@ func (u *GetItemUsecase) GetItem(ctx context.Context, itemID uuid.UUID) (*dto.It
 			return nil, err
 		}
 
-		u.logger.Error(
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx,
 			"failed to get item by id",
-			"itemId", itemID.String(),
 			"error", err,
 		)
 		return nil, domain.ErrInternal
@@ -78,9 +80,9 @@ func (u *GetItemUsecase) GetItem(ctx context.Context, itemID uuid.UUID) (*dto.It
 
 	soldOut, err := soldOutByItemID(ctx, u.soldOut, []*domain.Item{item})
 	if err != nil {
-		u.logger.Error(
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx,
 			"failed to count purchased items",
-			"itemId", itemID.String(),
 			"error", err,
 		)
 		return nil, domain.ErrInternal

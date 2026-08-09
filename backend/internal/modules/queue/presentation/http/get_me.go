@@ -8,11 +8,12 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
 
-func GetMyTicket(usecase ports.GetMeUsecase) http.HandlerFunc {
+func GetMyTicket(logger ports.Logger, usecase ports.GetMeUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
@@ -26,7 +27,8 @@ func GetMyTicket(usecase ports.GetMeUsecase) http.HandlerFunc {
 			return
 		}
 
-		ticket, err := usecase.GetMyTicket(r.Context(), itemID, userID)
+		ctx := logging.WithItemID(r.Context(), logger, itemID)
+		ticket, err := usecase.GetMyTicket(ctx, itemID, userID)
 		if err != nil {
 			if errors.Is(err, domain.ErrTicketNotFound) {
 				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "user has no ticket for this item")

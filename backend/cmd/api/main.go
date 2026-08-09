@@ -28,6 +28,7 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
 	var configPath string
 	flag.StringVar(&configPath, "c", "", "path to config file")
 	flag.Parse()
@@ -42,9 +43,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	pool, cleanup, err := postgres.NewPool(context.Background(), &cfg.PostgresConfig)
+	pool, cleanup, err := postgres.NewPool(ctx, &cfg.PostgresConfig)
 	if err != nil {
-		slogger.Error(
+		slogger.ErrorContext(ctx,
+			"failed to connect to postgres",
 			"error", err,
 		)
 		os.Exit(1)
@@ -58,7 +60,7 @@ func main() {
 	queue := queueModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
 	checkout := checkoutModule.New(pool, txManager, slogger, cfg.CheckoutTimer)
 
-	application.AddSeedData(context.Background(), postgres2.NewItemsRepository(pool), slogger)
+	application.AddSeedData(ctx, postgres2.NewItemsRepository(pool, slogger), slogger)
 	auth, err := authModule.New(pool, cfg.JWTConfig.PrivateKeyPath, authModule.Config{
 		Issuer:   cfg.JWTConfig.Issuer,
 		Audience: cfg.JWTConfig.Audience,
@@ -66,7 +68,8 @@ func main() {
 		TTL:      cfg.JWTConfig.TTL,
 	}, slogger)
 	if err != nil {
-		slogger.Error(
+		slogger.ErrorContext(ctx,
+			"failed to initialize auth module",
 			"error", err,
 		)
 		return
@@ -74,7 +77,7 @@ func main() {
 
 	publicKey, err := authjwt.LoadPublicKey(cfg.JWTConfig.PublicKeyPath)
 	if err != nil {
-		slogger.Error("failed to load JWT public key", "error", err)
+		slogger.ErrorContext(ctx, "failed to load JWT public key", "error", err)
 		return
 	}
 
@@ -91,7 +94,7 @@ func main() {
 	items.RegisterRoutes(router)
 
 	router.Group(func(r chi.Router) {
-		r.Use(httpx.JWTAuth(verifier))
+		r.Use(httpx.JWTAuth(slogger, verifier))
 
 		queue.RegisterRoutes(r)
 		checkout.RegisterRoutes(r)
@@ -103,7 +106,7 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slogger.Error("failed to listen server", "error", err)
+			slogger.ErrorContext(ctx, "failed to listen server", "error", err)
 		}
 	}()
 
@@ -113,8 +116,8 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		slogger.Error("failed to shutdown server", "error", err)
+		slogger.ErrorContext(shutdownCtx, "failed to shutdown server", "error", err)
 	}
 
-	slogger.Debug("server stopped gracefully..")
+	slogger.DebugContext(ctx, "server stopped gracefully")
 }

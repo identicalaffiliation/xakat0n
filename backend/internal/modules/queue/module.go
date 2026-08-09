@@ -19,25 +19,32 @@ type Module struct {
 	createUsecase ports.CreateUsecase
 	quitUsecase   ports.QuitUsecase
 	getMeUsecase  ports.GetMeUsecase
+	logger        ports.Logger
 }
 
-func New(pool tx.DBTX, txManager ports.TxManager, logger ports.Logger, ttl time.Duration) *Module {
-	repo := postgres.NewQueueRepository(pool)
-	itemsRepo := itemspostgres.NewItemsRepository(pool)
+func New(
+	pool tx.DBTX,
+	txManager ports.TxManager,
+	logger ports.Logger,
+	ttl time.Duration,
+) *Module {
+	repo := postgres.NewQueueRepository(pool, logger)
+	itemsRepo := itemspostgres.NewItemsRepository(pool, logger)
 	advanceUsecase := application.NewAdvanceQueueUsecase(itemsRepo, repo, txManager, logger)
 
 	return &Module{
 		createUsecase: application.NewCreateQueueUsecase(advanceUsecase, repo, itemsRepo, txManager, logger, ttl),
 		quitUsecase:   application.NewQuitQueueUsecase(repo, advanceUsecase, txManager, logger, ttl),
 		getMeUsecase:  application.NewGetMyTicketUsecase(advanceUsecase, repo, logger, ttl),
+		logger:        logger,
 	}
 }
 
 func (m *Module) RegisterRoutes(r chi.Router) {
 	createRoute := fmt.Sprintf("/api/v1/items/{%s}/queue", httpapi.ItemIdMuxPattern)
-	r.With(httpx.Metrics).Post(createRoute, httpapi.PutUserInQueue(m.createUsecase))
+	r.With(httpx.Metrics).Post(createRoute, httpapi.PutUserInQueue(m.logger, m.createUsecase))
 
 	meRoute := fmt.Sprintf("/api/v1/items/{%s}/queue/me", httpapi.ItemIdMuxPattern)
-	r.With(httpx.Metrics).Delete(meRoute, httpapi.QuitQueue(m.quitUsecase))
-	r.With(httpx.Metrics).Get(meRoute, httpapi.GetMyTicket(m.getMeUsecase))
+	r.With(httpx.Metrics).Delete(meRoute, httpapi.QuitQueue(m.logger, m.quitUsecase))
+	r.With(httpx.Metrics).Get(meRoute, httpapi.GetMyTicket(m.logger, m.getMeUsecase))
 }

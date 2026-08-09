@@ -2,7 +2,6 @@ package integrations
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -20,17 +19,18 @@ import (
 )
 
 func newCreateQueueUsecase() *application.CreateQueueUsecase {
-	queueRepo := postgres.NewQueueRepository(db)
-	itemsRepo := itemspostgres.NewItemsRepository(db)
-	advanceUsecase := newAdvanceQueueUsecase()
-	txManager := tx.NewManager(db, slog.Default())
+	logging := newTestLogger()
+	queueRepo := postgres.NewQueueRepository(db, logging)
+	itemsRepo := itemspostgres.NewItemsRepository(db, logging)
+	advanceUsecase := newAdvanceQueueUsecase(logging)
+	txManager := tx.NewManager(db, logging)
 
 	return application.NewCreateQueueUsecase(
 		advanceUsecase,
 		queueRepo,
 		itemsRepo,
 		txManager,
-		slog.Default(),
+		logging,
 		3*time.Second,
 	)
 }

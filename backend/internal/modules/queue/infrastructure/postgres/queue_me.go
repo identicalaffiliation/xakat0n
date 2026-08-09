@@ -32,10 +32,10 @@ func (repo *QueueRepository) GetLatestTicket(ctx context.Context, productID, use
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrTicketNotFound
+			return nil, repo.wrapError(ctx, domain.ErrTicketNotFound)
 		}
 
-		return nil, fmt.Errorf("get latest ticket: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("get latest ticket: %w", err))
 	}
 
 	return &q, nil
@@ -48,7 +48,7 @@ func (repo *QueueRepository) CountQueuedAhead(ctx context.Context, productID uui
 
 	var count int
 	if err := repo.dbtx(ctx).QueryRow(ctx, query, productID, createdAt).Scan(&count); err != nil {
-		return 0, fmt.Errorf("count queued ahead: %w", err)
+		return 0, repo.wrapError(ctx, fmt.Errorf("count queued ahead: %w", err))
 	}
 
 	return count, nil
@@ -61,7 +61,7 @@ func (repo *QueueRepository) NextSlotFreeAt(ctx context.Context, productID uuid.
 
 	var nextFree *time.Time
 	if err := repo.dbtx(ctx).QueryRow(ctx, query, productID).Scan(&nextFree); err != nil {
-		return nil, fmt.Errorf("next slot free at: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("next slot free at: %w", err))
 	}
 
 	return nextFree, nil

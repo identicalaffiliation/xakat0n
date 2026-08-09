@@ -2,7 +2,6 @@ package integrations
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -29,10 +28,17 @@ func TestQuitQueueUsecase_PromotesNextUser(t *testing.T) {
 	seedTicket(t, uuid.New(), itemID, firstUserID, domain.QueueStatusOffered, base, &expiresAt)
 	seedTicket(t, uuid.New(), itemID, secondUserID, domain.QueueStatusQueued, base.Add(time.Second), nil)
 
-	repo := postgres.NewQueueRepository(db)
-	manager := tx.NewManager(db, slog.Default())
-	advance := newAdvanceQueueUsecase()
-	usecase := application.NewQuitQueueUsecase(repo, advance, manager, slog.Default(), ttl)
+	logging := newTestLogger()
+	repo := postgres.NewQueueRepository(db, logging)
+	manager := tx.NewManager(db, logging)
+	advance := newAdvanceQueueUsecase(logging)
+	usecase := application.NewQuitQueueUsecase(
+		repo,
+		advance,
+		manager,
+		logging,
+		ttl,
+	)
 
 	response, err := usecase.QuitQueue(context.Background(), itemID, firstUserID)
 

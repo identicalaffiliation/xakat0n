@@ -2,7 +2,6 @@ package integrations
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -20,10 +19,11 @@ import (
 )
 
 func newPaymentCallbackUsecase() *checkoutapplication.PaymentCallbackUsecase {
-	queueRepo := postgres.NewQueueRepository(db)
-	advance := checkout.NewAdvanceAdapter(newAdvanceQueueUsecase())
+	logging := newTestLogger()
+	queueRepo := postgres.NewQueueRepository(db, logging)
+	advance := checkout.NewAdvanceAdapter(newAdvanceQueueUsecase(logging))
 
-	return checkoutapplication.NewPaymentCallbackUsecase(advance, queueRepo, slog.Default(), 3*time.Second)
+	return checkoutapplication.NewPaymentCallbackUsecase(advance, queueRepo, logging, 3*time.Second)
 }
 
 func paidRequest(ticketID uuid.UUID) *checkoutdto.PaymentCallbackRequest {

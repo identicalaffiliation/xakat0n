@@ -9,6 +9,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
@@ -17,7 +18,7 @@ const (
 	ItemIdMuxPattern = "itemId"
 )
 
-func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
+func PutUserInQueue(logger ports.Logger, usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		productID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
@@ -31,7 +32,8 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 			return
 		}
 
-		response, err := usecase.CreateQueue(r.Context(), dto.NewCreateRequest(productID, userID))
+		ctx := logging.WithItemID(r.Context(), logger, productID)
+		response, err := usecase.CreateQueue(ctx, dto.NewCreateRequest(productID, userID))
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrQueueNotApplicable):
@@ -50,14 +52,15 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	}
 }
 
-func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
+func QuitQueue(logger ports.Logger, usecase ports.QuitUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, userID, ok := queueIDs(w, r)
 		if !ok {
 			return
 		}
+		ctx := logging.WithItemID(r.Context(), logger, itemID)
 
-		response, err := usecase.QuitQueue(r.Context(), itemID, userID)
+		response, err := usecase.QuitQueue(ctx, itemID, userID)
 		if err != nil {
 			if errors.Is(err, domain.ErrQueueNotFound) {
 				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "user has no ticket for this item")

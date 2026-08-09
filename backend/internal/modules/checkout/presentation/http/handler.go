@@ -10,6 +10,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout/dto"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/checkout/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
@@ -18,7 +19,7 @@ const (
 	ItemIdMuxPattern = "itemId"
 )
 
-func StartCheckout(usecase ports.CheckoutUsecase) http.HandlerFunc {
+func StartCheckout(logger ports.Logger, usecase ports.CheckoutUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
@@ -32,7 +33,8 @@ func StartCheckout(usecase ports.CheckoutUsecase) http.HandlerFunc {
 			return
 		}
 
-		result, err := usecase.StartCheckout(r.Context(), itemID, userID)
+		ctx := logging.WithItemID(r.Context(), logger, itemID)
+		result, err := usecase.StartCheckout(ctx, itemID, userID)
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrItemNotFound):
@@ -49,7 +51,7 @@ func StartCheckout(usecase ports.CheckoutUsecase) http.HandlerFunc {
 	}
 }
 
-func PaymentCallback(usecase ports.PaymentCallbackUsecase) http.HandlerFunc {
+func PaymentCallback(logger ports.Logger, usecase ports.PaymentCallbackUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
 		if err != nil {
@@ -68,8 +70,10 @@ func PaymentCallback(usecase ports.PaymentCallbackUsecase) http.HandlerFunc {
 			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "ticketId is required, result must be either \"paid\" or \"failed\"")
 			return
 		}
+		ctx := logging.WithItemID(r.Context(), logger, itemID)
+		ctx = logging.WithTicketID(ctx, logger, in.TicketID)
 
-		ticket, err := usecase.HandleCallback(r.Context(), itemID, userID, &in)
+		ticket, err := usecase.HandleCallback(ctx, itemID, userID, &in)
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrTicketNotFound):

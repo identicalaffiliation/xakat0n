@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/logctx"
 )
 
 type tokenVerifierStub struct {
@@ -28,12 +30,14 @@ func (s *tokenVerifierStub) Verify(token string) (uuid.UUID, error) {
 func TestJWTAuth_AllowsValidBearerToken(t *testing.T) {
 	userID := uuid.New()
 	verifier := &tokenVerifierStub{userID: userID}
+	logContext := logctx.NewLogCtx()
 	nextCalled := false
-	handler := JWTAuth(verifier)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := JWTAuth(logContext, verifier)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
 		actualUserID, ok := UserID(r.Context())
 		require.True(t, ok)
 		assert.Equal(t, userID, actualUserID)
+		assert.Equal(t, userID, logContext.FieldsFromContext(r.Context())["userID"])
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/items", nil)
@@ -63,7 +67,7 @@ func TestJWTAuth_RejectsMissingOrMalformedBearerToken(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			verifier := &tokenVerifierStub{}
-			handler := JWTAuth(verifier)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+			handler := JWTAuth(logctx.NewLogCtx(), verifier)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 				t.Fatal("protected handler must not be called")
 			}))
 			request := httptest.NewRequest(http.MethodGet, "/api/v1/items", nil)
@@ -85,7 +89,7 @@ func TestJWTAuth_RejectsMissingOrMalformedBearerToken(t *testing.T) {
 
 func TestJWTAuth_RejectsInvalidToken(t *testing.T) {
 	verifier := &tokenVerifierStub{err: errors.New("invalid signature")}
-	handler := JWTAuth(verifier)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+	handler := JWTAuth(logctx.NewLogCtx(), verifier)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		t.Fatal("protected handler must not be called")
 	}))
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/items", nil)

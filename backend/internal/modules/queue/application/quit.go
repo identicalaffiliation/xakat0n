@@ -9,6 +9,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/dto"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/ports"
 )
 
@@ -39,30 +40,30 @@ func NewQuitQueueUsecase(
 func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error) {
 	queue, err := u.queue.QuitQueue(ctx, itemID, userID)
 	if err != nil {
+		ctx = u.logger.ContextFromError(ctx, err)
 		if errors.Is(err, domain.ErrQueueNotFound) {
-			u.logger.Warn(
+			u.logger.WarnContext(
+				ctx,
 				"queue not found",
 				"error", err,
-				"userID", userID,
-				"product_id", itemID,
 			)
-			return nil, err
+			return nil, u.logger.WrapError(ctx, err)
 		}
-		u.logger.Error(
+		u.logger.ErrorContext(
+			ctx,
 			"failed to Quit from queue",
 			"error", err,
-			"userID", userID,
-			"product_id", itemID,
 		)
-		return nil, domain.ErrInternal
+		return nil, u.logger.WrapError(ctx, domain.ErrInternal)
 	}
+	ctx = logging.WithQueueID(ctx, u.logger, queue.ID)
 
 	err = u.advance.AdvanceQueue(ctx, itemID, u.ttl)
 	if err != nil {
-		u.logger.Error(
-			"error advance queue",
-			"itemID", itemID,
-			"userID", userID,
+		u.logger.ErrorContext(
+			u.logger.ContextFromError(ctx, err),
+			"failed to advance queue after quit",
+			"error", err,
 		)
 	}
 

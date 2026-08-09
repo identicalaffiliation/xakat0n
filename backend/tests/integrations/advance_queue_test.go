@@ -2,7 +2,6 @@ package integrations
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -18,12 +17,21 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/tx"
 )
 
-func newAdvanceQueueUsecase() *application.AdvanceQueueUsecase {
-	queueRepo := postgres.NewQueueRepository(db)
-	itemsRepo := itemspostgres.NewItemsRepository(db)
-	txManager := tx.NewManager(db, slog.Default())
+func newAdvanceQueueUsecase(loggers ...*testLogger) *application.AdvanceQueueUsecase {
+	logging := newTestLogger()
+	if len(loggers) > 0 {
+		logging = loggers[0]
+	}
+	queueRepo := postgres.NewQueueRepository(db, logging)
+	itemsRepo := itemspostgres.NewItemsRepository(db, logging)
+	txManager := tx.NewManager(db, logging)
 
-	return application.NewAdvanceQueueUsecase(itemsRepo, queueRepo, txManager, slog.Default())
+	return application.NewAdvanceQueueUsecase(
+		itemsRepo,
+		queueRepo,
+		txManager,
+		logging,
+	)
 }
 
 func countTicketsByStatus(t *testing.T, productID uuid.UUID, status domain.QueueStatus) int {

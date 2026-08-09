@@ -1,5 +1,5 @@
 logger:
-  format: text
+  format: json
   level: debug
 
 postgres:

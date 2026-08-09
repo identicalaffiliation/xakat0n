@@ -64,12 +64,13 @@ func (u *AdvanceQueueUsecase) AdvanceQueue(ctx context.Context, itemID uuid.UUID
 		return u.queue.MarkSoldOut(ctx, itemID, item.Stock)
 	})
 	if err != nil {
-		u.logger.Error(
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(
+			ctx,
 			"failed to advance queue",
-			"item_id", itemID,
 			"error", err,
 		)
-		return err
+		return u.logger.WrapError(ctx, err)
 	}
 
 	return nil

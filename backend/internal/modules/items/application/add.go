@@ -10,7 +10,8 @@ import (
 func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger ports.Logger) {
 	all, err := itemsRepo.GetAll(ctx)
 	if err != nil {
-		logger.Error(
+		ctx = logger.ContextFromError(ctx, err)
+		logger.ErrorContext(ctx,
 			"failed to get all items",
 			"error", err,
 		)
@@ -65,9 +66,12 @@ func AddSeedData(ctx context.Context, itemsRepo ports.ItemsRepository, logger po
 	}
 
 	for _, item := range items {
-		err := itemsRepo.CreateItem(ctx, item)
+		itemCtx := ctx
+		itemCtx = logger.WithField(itemCtx, "itemTitle", item.Title)
+		err := itemsRepo.CreateItem(itemCtx, item)
 		if err != nil {
-			logger.Error(
+			itemCtx = logger.ContextFromError(itemCtx, err)
+			logger.ErrorContext(itemCtx,
 				"failed to create item",
 				"error", err,
 			)

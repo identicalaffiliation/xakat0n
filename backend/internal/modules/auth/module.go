@@ -41,7 +41,7 @@ func New(pool tx.DBTX, privateKeyPath string, cfg Config, logger ports.Logger) (
 		cfg.TTL,
 	)
 
-	users := postgres.NewUsersRepository(pool)
+	users := postgres.NewUsersRepository(pool, logger)
 
 	return &Module{
 		loginUsecase: application.NewLoginUsecase(users, issuer, logger),

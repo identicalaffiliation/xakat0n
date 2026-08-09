@@ -34,7 +34,7 @@ func (repo *QueueRepository) TryStartCheckout(ctx context.Context, itemID, userI
 			return nil, false, nil
 		}
 
-		return nil, false, fmt.Errorf("try start checkout: %w", err)
+		return nil, false, repo.wrapError(ctx, fmt.Errorf("try start checkout: %w", err))
 	}
 
 	return &q, true, nil
@@ -68,7 +68,7 @@ func (repo *QueueRepository) FinalizeCheckoutResult(ctx context.Context, itemID,
 			return nil, false, nil
 		}
 
-		return nil, false, fmt.Errorf("finalize checkout result: %w", err)
+		return nil, false, repo.wrapError(ctx, fmt.Errorf("finalize checkout result: %w", err))
 	}
 
 	return &q, true, nil
@@ -97,10 +97,10 @@ func (repo *QueueRepository) FindTicket(ctx context.Context, itemID, userID, tic
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, checkoutdomain.ErrTicketNotFound
+			return nil, repo.wrapError(ctx, checkoutdomain.ErrTicketNotFound)
 		}
 
-		return nil, fmt.Errorf("find ticket: %w", err)
+		return nil, repo.wrapError(ctx, fmt.Errorf("find ticket: %w", err))
 	}
 
 	return &q, nil

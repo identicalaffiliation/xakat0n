@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/ports"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
@@ -28,15 +29,16 @@ func GetItems(usecase ports.GetAllItemsUsecase) http.HandlerFunc {
 	}
 }
 
-func GetItem(usecase ports.GetItemUsecase) http.HandlerFunc {
+func GetItem(logger ports.Logger, usecase ports.GetItemUsecase) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(request, ItemIdMuxPattern))
 		if err != nil {
 			httpx.WriteError(writer, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
 		}
+		ctx := logging.WithItemID(request.Context(), logger, id)
 
-		item, err := usecase.GetItem(request.Context(), id)
+		item, err := usecase.GetItem(ctx, id)
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrItemNotFound):

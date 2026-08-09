@@ -12,7 +12,14 @@ import (
 func TestCreateLogger(t *testing.T) {
 	t.Parallel()
 
-	logger, err := NewLogger(&config.APIConfig{LoggerConfig: config.LoggerConfig{Level: LevelDebug, Format: JsonFormat}})
+	logger, err := NewLogger(
+		&config.APIConfig{
+			LoggerConfig: config.LoggerConfig{
+				Level:  LevelDebug,
+				Format: JsonFormat,
+			},
+		},
+	)
 	require.NoError(t, err)
 	assert.NotNil(t, logger)
 }

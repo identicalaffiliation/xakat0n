@@ -33,8 +33,13 @@ func (f *fakeItemsRepo) GetItemByID(ctx context.Context, itemID uuid.UUID) (*dom
 
 type fakeLogger struct{}
 
-func (l *fakeLogger) Debug(msg string, args ...any) {}
-func (l *fakeLogger) Error(msg string, args ...any) {}
+func (l *fakeLogger) DebugContext(context.Context, string, ...any)                   {}
+func (l *fakeLogger) InfoContext(context.Context, string, ...any)                    {}
+func (l *fakeLogger) WarnContext(context.Context, string, ...any)                    {}
+func (l *fakeLogger) ErrorContext(context.Context, string, ...any)                   {}
+func (l *fakeLogger) WithField(ctx context.Context, _ string, _ any) context.Context { return ctx }
+func (l *fakeLogger) WrapError(_ context.Context, err error) error                   { return err }
+func (l *fakeLogger) ContextFromError(ctx context.Context, _ error) context.Context  { return ctx }
 
 type fakeSoldOutChecker struct {
 	purchased map[uuid.UUID]int

@@ -19,7 +19,7 @@ type TokenVerifier interface {
 	Verify(token string) (uuid.UUID, error)
 }
 
-func JWTAuth(verifier TokenVerifier) func(http.Handler) http.Handler {
+func JWTAuth(logctx LogContext, verifier TokenVerifier) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token, ok := bearerToken(r.Header.Get(authorizationHeader))
@@ -34,7 +34,8 @@ func JWTAuth(verifier TokenVerifier) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userIDKey{}, userID)
+			ctx := withLogUserID(r.Context(), logctx, userID)
+			ctx = context.WithValue(ctx, userIDKey{}, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

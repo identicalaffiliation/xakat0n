@@ -5,6 +5,7 @@ import (
 
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/domain"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/dto"
+	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/logging"
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/auth/ports"
 )
 
@@ -27,16 +28,19 @@ func (u *LoginUsecase) Login(ctx context.Context, rawUsername string) (*dto.Logi
 	if err != nil {
 		return nil, err
 	}
+	ctx = logging.WithUsername(ctx, u.logger, username.String())
 
 	userID, err := u.users.GetOrCreate(ctx, username)
 	if err != nil {
-		u.logger.Error("failed to get or create user", "username", username.String(), "error", err)
+		ctx = u.logger.ContextFromError(ctx, err)
+		u.logger.ErrorContext(ctx, "failed to get or create user", "error", err)
 		return nil, domain.ErrInternal
 	}
+	ctx = logging.WithUserID(ctx, u.logger, userID)
 
 	token, err := u.issuer.Issue(userID, username)
 	if err != nil {
-		u.logger.Error("failed to issue token", "user_id", userID.String(), "error", err)
+		u.logger.ErrorContext(ctx, "failed to issue token", "error", err)
 		return nil, domain.ErrInternal
 	}
 
