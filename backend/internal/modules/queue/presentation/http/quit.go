@@ -9,16 +9,16 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
 
-func GetMyTicket(usecase ports.GetMeUsecase) http.HandlerFunc {
+func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		itemID, userID, ok := parseQueueIDs(w, r)
 		if !ok {
 			return
 		}
 
-		ticket, err := usecase.GetMyTicket(r.Context(), itemID, userID)
+		response, err := usecase.QuitQueue(r.Context(), itemID, userID)
 		if err != nil {
-			if errors.Is(err, domain.ErrTicketNotFound) {
+			if errors.Is(err, domain.ErrQueueNotFound) {
 				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "user has no ticket for this item")
 				return
 			}
@@ -27,6 +27,6 @@ func GetMyTicket(usecase ports.GetMeUsecase) http.HandlerFunc {
 			return
 		}
 
-		httpx.EncodeJSON(w, ticket, http.StatusOK)
+		httpx.EncodeJSON(w, response, http.StatusOK)
 	}
 }
