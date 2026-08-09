@@ -42,15 +42,15 @@ export const QueueWidget: React.FC = () => {
   }
 
   const handleGoToQueue = () => {
-    if (state.itemId) {
-      navigate(`/product/${state.itemId}/queue`);
+    if (state.productId) {
+      navigate(`/product/${state.productId}/queue`);
     }
   };
 
   const handleGoToCheckout = () => {
-    if (state.itemId) {
-      startCheckout(state.itemId);
-      navigate(`/product/${state.itemId}/queue`);
+    if (state.productId) {
+      startCheckout(state.productId);
+      navigate(`/product/${state.productId}/queue`);
     }
   };
 
@@ -130,7 +130,7 @@ export const QueueWidget: React.FC = () => {
               size="small"
               color="error"
               onClick={() => {
-                if (state.itemId) {
+                if (state.productId) {
                   leaveQueue();
                   navigate('/products');
                 }

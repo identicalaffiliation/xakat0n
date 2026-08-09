@@ -9,7 +9,7 @@ export type QueueStatus =
   | 'PURCHASED';
 
 interface QueueState {
-  itemId: number | null;
+  productId: number | null;
   status: QueueStatus | null;
   queuePosition: number | null;
   totalInQueue: number | null;
@@ -19,35 +19,35 @@ interface QueueState {
 
 interface QueueContextType {
   state: QueueState;
-  occupiedItemId: number | null;
-  startCheckout: (itemId: number, isLimited?: boolean) => void;
-  joinQueue: (itemId: number) => void;
+  occupiedProductId: number | null;
+  startCheckout: (productId: number, isLimited?: boolean) => void;
+  joinQueue: (productId: number) => void;
   leaveQueue: () => void;
   expireOffer: () => void;
   confirmPurchase: () => void;
   reset: () => void;
-  isProductOccupied: (itemId: number) => boolean;
-  forceStatus: (itemId: number, newStatus: QueueStatus, timeLeft?: number, isLimited?: boolean) => void;
+  isProductOccupied: (productId: number) => boolean;
+  forceStatus: (productId: number, newStatus: QueueStatus, timeLeft?: number, isLimited?: boolean) => void;
 }
 
 const QueueContext = createContext<QueueContextType | undefined>(undefined);
 
 export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<QueueState>({
-    itemId: null,
+    productId: null,
     status: null,
     queuePosition: null,
     totalInQueue: null,
     timeLeft: null,
     isLimited: null,
   });
-  const [occupiedItemId, setOccupiedItemId] = useState<number | null>(null);
+  const [occupiedProductId, setOccupiedProductId] = useState<number | null>(null);
   const [queue, setQueue] = useState<number[]>([]);
 
-  const startCheckout = (itemId: number, isLimited: boolean = true) => {
-    setOccupiedItemId(itemId);
+  const startCheckout = (productId: number, isLimited: boolean = true) => {
+    setOccupiedProductId(productId);
     setState({
-      itemId,
+      productId,
       status: 'CHECKOUT',
       queuePosition: null,
       totalInQueue: null,
@@ -56,13 +56,13 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const joinQueue = (itemId: number) => {
+  const joinQueue = (productId: number) => {
     const userId = 1;
     setQueue(prev => [...prev, userId]);
     const position = queue.length + 1;
-    setOccupiedItemId(itemId);
+    setOccupiedProductId(productId);
     setState({
-      itemId,
+      productId,
       status: 'QUEUED',
       queuePosition: position,
       totalInQueue: position + 2,
@@ -82,7 +82,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       timeLeft: null,
       isLimited: null,
     }));
-    setOccupiedItemId(null);
+    setOccupiedProductId(null);
   };
 
   const expireOffer = () => {
@@ -92,7 +92,7 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       timeLeft: null,
       isLimited: null,
     }));
-    setOccupiedItemId(null);
+    setOccupiedProductId(null);
   };
 
   const confirmPurchase = () => {
@@ -102,32 +102,32 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       timeLeft: null,
       isLimited: null,
     }));
-    setOccupiedItemId(null);
+    setOccupiedProductId(null);
   };
 
   const reset = () => {
     setState({
-      itemId: null,
+      productId: null,
       status: null,
       queuePosition: null,
       totalInQueue: null,
       timeLeft: null,
       isLimited: null,
     });
-    setOccupiedItemId(null);
+    setOccupiedProductId(null);
     setQueue([]);
   };
 
-  const isProductOccupied = (itemId: number) => occupiedItemId === itemId;
+  const isProductOccupied = (productId: number) => occupiedProductId === productId;
 
   const forceStatus = (
-    itemId: number,
+    productId: number,
     newStatus: QueueStatus,
     timeLeft?: number,
     isLimited: boolean = true,
   ) => {
     setState({
-      itemId,
+      productId,
       status: newStatus,
       queuePosition: newStatus === 'QUEUED' ? 2 : null,
       totalInQueue: newStatus === 'QUEUED' ? 4 : null,
@@ -135,16 +135,16 @@ export const QueueProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       isLimited,
     });
     if (newStatus === 'CHECKOUT' || newStatus === 'QUEUED') {
-      setOccupiedItemId(itemId);
+      setOccupiedProductId(productId);
     } else {
-      setOccupiedItemId(null);
+      setOccupiedProductId(null);
     }
   };
 
   return (
     <QueueContext.Provider value={{
       state,
-      occupiedItemId,
+      occupiedProductId,
       startCheckout,
       joinQueue,
       leaveQueue,
