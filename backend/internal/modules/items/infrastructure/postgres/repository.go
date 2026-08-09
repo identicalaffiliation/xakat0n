@@ -31,8 +31,8 @@ func (repo *ItemsRepository) dbtx(ctx context.Context) tx.DBTX {
 func (repo *ItemsRepository) CreateItem(ctx context.Context, item *domain.Item) error {
 	const query string = `
 			INSERT INTO items
-			(title, description, price, category, is_limited, stock)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			(title, description, price, category, is_limited, stock, image_path)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			`
 
 	if _, err := repo.dbtx(ctx).Exec(
@@ -44,6 +44,7 @@ func (repo *ItemsRepository) CreateItem(ctx context.Context, item *domain.Item) 
 		item.Category,
 		item.IsLimited,
 		item.Stock,
+		item.ImagePath,
 	); err != nil {
 		return fmt.Errorf("create item: %w", err)
 	}
@@ -71,6 +72,7 @@ func (repo *ItemsRepository) GetAll(ctx context.Context) ([]*domain.Item, error)
 			&item.IsLimited,
 			&item.Stock,
 			&item.CreatedAt,
+			&item.ImagePath,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("scan item: %w", err)
@@ -98,6 +100,7 @@ func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) 
 		&item.IsLimited,
 		&item.Stock,
 		&item.CreatedAt,
+		&item.ImagePath,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -108,6 +111,45 @@ func (repo *ItemsRepository) GetItemByID(ctx context.Context, itemID uuid.UUID) 
 	}
 
 	return &item, nil
+}
+
+// GetSimilarByCategory — узкая выборка для GET /items/{itemId}/similar: тот же category,
+// сам товар исключён, отсортировано по свежести. Пустая category сюда не приходит — при
+// отсутствующей category вызывающий usecase не обращается к репозиторию (не с чем сравнивать).
+func (repo *ItemsRepository) GetSimilarByCategory(ctx context.Context, itemID uuid.UUID, category string, limit int) ([]*domain.Item, error) {
+	const query = `SELECT * FROM items WHERE category = $1 AND id <> $2 ORDER BY created_at DESC LIMIT $3`
+
+	var items []*domain.Item
+	rows, err := repo.pool.Query(ctx, query, category, itemID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("get similar items: %w", err)
+	}
+
+	for rows.Next() {
+		var item domain.Item
+		err := rows.Scan(
+			&item.ID,
+			&item.Title,
+			&item.Description,
+			&item.Price,
+			&item.Category,
+			&item.IsLimited,
+			&item.Stock,
+			&item.CreatedAt,
+			&item.ImagePath,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan similar item: %w", err)
+		}
+
+		items = append(items, &item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan similar items: %w", err)
+	}
+
+	return items, nil
 }
 
 // IsLimited — реализует checkout/ports.ItemsRepository, без FOR UPDATE в отличие от LockStock.

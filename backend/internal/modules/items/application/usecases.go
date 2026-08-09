@@ -90,6 +90,63 @@ func (u *GetItemUsecase) GetItem(ctx context.Context, itemID uuid.UUID) (*dto.It
 	return &result, nil
 }
 
+type GetSimilarItemsUsecase struct {
+	repo    ports.ItemsRepository
+	soldOut ports.SoldOutChecker
+	logger  ports.Logger
+}
+
+func NewGetSimilarItemsUsecase(repo ports.ItemsRepository, soldOut ports.SoldOutChecker, log ports.Logger) *GetSimilarItemsUsecase {
+	return &GetSimilarItemsUsecase{
+		repo:    repo,
+		soldOut: soldOut,
+		logger:  log,
+	}
+}
+
+func (u *GetSimilarItemsUsecase) GetSimilarItems(ctx context.Context, itemID uuid.UUID, limit int) ([]dto.Item, error) {
+	item, err := u.repo.GetItemByID(ctx, itemID)
+	if err != nil {
+		if errors.Is(err, domain.ErrItemNotFound) {
+			return nil, err
+		}
+
+		u.logger.Error(
+			"failed to get item by id",
+			"itemId", itemID.String(),
+			"error", err,
+		)
+		return nil, domain.ErrInternal
+	}
+
+	// Не с чем сравнивать — товар без category похожих не имеет.
+	if item.Category == nil {
+		return []dto.Item{}, nil
+	}
+
+	similar, err := u.repo.GetSimilarByCategory(ctx, itemID, *item.Category, limit)
+	if err != nil {
+		u.logger.Error(
+			"failed to get similar items",
+			"itemId", itemID.String(),
+			"error", err,
+		)
+		return nil, domain.ErrInternal
+	}
+
+	soldOut, err := soldOutByItemID(ctx, u.soldOut, similar)
+	if err != nil {
+		u.logger.Error(
+			"failed to count purchased items",
+			"itemId", itemID.String(),
+			"error", err,
+		)
+		return nil, domain.ErrInternal
+	}
+
+	return dto.NewItems(similar, soldOut), nil
+}
+
 // soldOutByItemID считает soldOut только для лимитированных товаров: у
 // нелимитированных стока в контрактном смысле нет, соответственно false
 // без обращения к queue-модулю.

@@ -40,7 +40,7 @@ const CheckoutPage: React.FC = () => {
   if (!product) return <Typography>Товар не найден</Typography>;
 
   // const productImage = `https://picsum.photos/seed/${product.item_id}/200/200`;
-  const productImage = getProductImage(product.item_id);
+  const productImage = product.image_url || getProductImage(product.item_id);
   const renderHeader = () => (
     <AppBar position="sticky" color="default" elevation={0} sx={{ bgcolor: '#fff', top: 0, zIndex: 1100 }}>
       <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>

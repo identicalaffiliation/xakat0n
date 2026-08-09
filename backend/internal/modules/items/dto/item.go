@@ -6,6 +6,8 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/items/domain"
 )
 
+const imagesBasePath = "/api/v1/static/images/"
+
 type Item struct {
 	ItemID      uuid.UUID `json:"itemId"`
 	Title       string    `json:"title"`
@@ -15,12 +17,19 @@ type Item struct {
 	IsLimited   bool      `json:"isLimited"`
 	Stock       *int      `json:"stock"`
 	SoldOut     bool      `json:"soldOut"`
+	ImageURL    *string   `json:"imageUrl"`
 }
 
 func NewItem(d *domain.Item, soldOut bool) Item {
 	var stock *int
 	if d.IsLimited {
 		stock = &d.Stock
+	}
+
+	var imageURL *string
+	if d.ImagePath != nil {
+		url := imagesBasePath + *d.ImagePath
+		imageURL = &url
 	}
 
 	return Item{
@@ -32,6 +41,7 @@ func NewItem(d *domain.Item, soldOut bool) Item {
 		IsLimited:   d.IsLimited,
 		Stock:       stock,
 		SoldOut:     soldOut,
+		ImageURL:    imageURL,
 	}
 }
 
