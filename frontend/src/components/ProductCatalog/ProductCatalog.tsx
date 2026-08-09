@@ -12,7 +12,7 @@ const SearchWrapper = styled('div')({
   border: '2px solid #00AAFF', borderRadius: '20px', bgcolor: '#fff',
   overflow: 'hidden', height: 48,
 });
-
+import { getProductImage } from '../../utils/imageUtils';
 const SearchIconWrapper = styled('div')(({ theme }) => ({
   padding: theme.spacing(0, 1.5), height: '100%', display: 'flex',
   alignItems: 'center', justifyContent: 'center', color: '#00AAFF',
@@ -145,8 +145,12 @@ const ProductCatalog: React.FC = () => {
                   <CardMedia
                     component="img"
                     height="280"
-                    image={`https://picsum.photos/seed/${item.item_id}/200/200`}
+                    image={getProductImage(item.item_id)}
+                    // image={`https://picsum.photos/seed/${item.item_id}/200/200`}
                     alt={item.title}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                    }}
                     sx={{ borderRadius: 4 }}
                   />
                   {item.is_limited && (

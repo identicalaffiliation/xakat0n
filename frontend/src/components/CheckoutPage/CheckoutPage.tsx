@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { Person, FavoriteBorder } from '@mui/icons-material';
 import { getItem, type Item } from '../../api/items';
-
+import { getProductImage } from '../../utils/imageUtils';
 const CheckoutPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -24,8 +24,8 @@ const CheckoutPage: React.FC = () => {
   if (loading) return <Typography>Загрузка...</Typography>;
   if (!product) return <Typography>Товар не найден</Typography>;
 
-  const productImage = `https://picsum.photos/seed/${product.item_id}/200/200`;
-
+  // const productImage = `https://picsum.photos/seed/${product.item_id}/200/200`;
+  const productImage = getProductImage(product.item_id);
   const renderHeader = () => (
     <AppBar position="sticky" color="default" elevation={0} sx={{ bgcolor: '#fff', top: 0, zIndex: 1100 }}>
       <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
@@ -52,7 +52,9 @@ const CheckoutPage: React.FC = () => {
           <Grid size={{ xs: 12, md: 7 }}>
             <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
               <Box sx={{ display: 'flex', gap: 3 }}>
-                <Box component="img" src={productImage} alt={product.title} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                <Box component="img" src={productImage} alt={product.title} onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                 <Box>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>{product.title}</Typography>
                   <Typography variant="body2" color="text.secondary">Категория: {product.category || 'Без категории'}</Typography>

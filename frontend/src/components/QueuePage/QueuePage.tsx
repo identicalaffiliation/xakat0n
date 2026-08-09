@@ -7,6 +7,7 @@ import {
 import { Person, FavoriteBorder } from '@mui/icons-material';
 import { getQueueStatus, cancelQueue, startCheckout, type Ticket } from '../../api/queue';
 import { getSimilar, type Item } from '../../api/items';
+import { getProductImage } from '../../utils/imageUtils';
 
 const QueuePage: React.FC = () => {
   const { id } = useParams<{ id: string }>(); 
@@ -91,8 +92,8 @@ const QueuePage: React.FC = () => {
     </Container>
   );
 
-  const productImage = `https://picsum.photos/seed/${ticket.itemId}/200/200`;
-
+  // const productImage = `https://picsum.photos/seed/${ticket.itemId}/200/200`;
+  const productImage = getProductImage(ticket.itemId);
   const renderContent = () => {
     switch (ticket.status) {
       case 'CHECKOUT':
@@ -105,7 +106,9 @@ const QueuePage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 7 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                      <Box component="img" src={productImage} alt="Товар" onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                      }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
                         <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
@@ -168,7 +171,9 @@ const QueuePage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 7 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                      <Box component="img" src={productImage} alt="Товар" onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                      }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
                         <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
@@ -220,7 +225,9 @@ const QueuePage: React.FC = () => {
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {similar.map(p => (
                     <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                      <img src={`https://picsum.photos/seed/${p.item_id}/200/200`} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                      <img src={productImage} alt={p.title} onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                      }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                       <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
                       <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
                     </Paper>
@@ -241,7 +248,9 @@ const QueuePage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 7 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                      <Box component="img" src={productImage} alt="Товар" onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                      }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box><Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography><Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography></Box>
                     </Box>
                   </Paper>
@@ -293,7 +302,9 @@ const QueuePage: React.FC = () => {
                   <Grid size={{ xs: 12, md: 7 }}>
                     <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                       <Box sx={{ display: 'flex', gap: 3 }}>
-                        <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                        <Box component="img" src={productImage} alt="Товар" onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                        }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                         <Box>
                           <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
                           <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
@@ -352,7 +363,9 @@ const QueuePage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     {similar.map(p => (
                       <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                        <img src={`https://picsum.photos/seed/${p.item_id}/200/200`} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                        <img src={productImage} alt={p.title} onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                        }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                         <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
                         <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
                       </Paper>
@@ -417,7 +430,9 @@ const QueuePage: React.FC = () => {
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                       {similar.map(p => (
                         <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                          <img src={`https://picsum.photos/seed/${p.item_id}/200/200`} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                          <img src={productImage} alt={p.title} onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                          }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                           <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
                           <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
                         </Paper>
@@ -439,7 +454,9 @@ const QueuePage: React.FC = () => {
                       <Grid size={{ xs: 12, md: 7 }}>
                         <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                           <Box sx={{ display: 'flex', gap: 3 }}>
-                            <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
+                            <Box component="img" src={productImage} alt="Товар" onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                            }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                             <Box>
                               <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
                               <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
@@ -479,7 +496,9 @@ const QueuePage: React.FC = () => {
                       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                         {similar.map(p => (
                           <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                            <img src={`https://picsum.photos/seed/${p.item_id}/200/200`} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                            <img src={productImage} alt={p.title} onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                            }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                             <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
                             <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
                           </Paper>
@@ -535,7 +554,7 @@ const QueuePage: React.FC = () => {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                           {similar.map(p => (
                             <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                              <img src={`https://picsum.photos/seed/${p.item_id}/200/200`} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                              <img src={getProductImage(ticket.itemId)} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                               <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
                               <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
                             </Paper>
@@ -566,3 +585,4 @@ const QueuePage: React.FC = () => {
 };
 
 export default QueuePage;
+//src={`https://picsum.photos/seed/${p.item_id}/200/200`}
