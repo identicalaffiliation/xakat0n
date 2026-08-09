@@ -157,7 +157,12 @@ const ProductDetail: React.FC = () => {
                 >
                   {product.sold_out ? 'Товар раскуплен' : 'Купить'}
                 </Button>
-                <Button variant="outlined" size="large" sx={{ borderColor: '#00AAFF', color: '#00AAFF', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { borderColor: '#0088cc', bgcolor: 'rgba(0,170,255,0.04)' } }}>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  sx={{ borderColor: '#00AAFF', color: '#00AAFF', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { borderColor: '#0088cc', bgcolor: 'rgba(0,170,255,0.04)' }, '&:active': { bgcolor: 'transparent'}}}
+                  onClick={() => alert('Корзина находится вне зоны ответственности сервиса очереди')}
+                >
                   Добавить в корзину
                 </Button>
               </Box>

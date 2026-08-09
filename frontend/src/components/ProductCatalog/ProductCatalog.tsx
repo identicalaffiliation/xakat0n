@@ -181,7 +181,7 @@ const ProductCatalog: React.FC = () => {
           ))}
           {filteredItems.length === 0 && (
             <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
-              <Typography variant="body1" color="text.secondary">Ничего не найдено</Typography>
+              <Typography variant="body1" color="text.secondary">Загрузка...</Typography>
             </Box>
           )}
         </Box>
