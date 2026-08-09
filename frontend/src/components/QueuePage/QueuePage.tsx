@@ -8,6 +8,7 @@ import { Person, FavoriteBorder } from '@mui/icons-material';
 import { getQueueStatus, cancelQueue, startCheckout, paymentCallback, type Ticket } from '../../api/queue';
 import { getItem, getSimilar, type Item } from '../../api/items';
 import { getProductImage } from '../../utils/imageUtils';
+
 const QueuePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -114,8 +115,14 @@ const QueuePage: React.FC = () => {
                         (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                       }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                        <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {product ? product.title : 'Загрузка...'}
+                        </Typography>
+                        {product && (
+                          <Typography variant="body2" color="text.secondary">
+                            Цена: {product.price.toLocaleString()} ₽
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </Paper>
@@ -132,9 +139,9 @@ const QueuePage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Детали заказа</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Товар</Typography><Typography sx={{ fontWeight: 500 }}>ID {ticket.itemId}</Typography></Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Товар</Typography><Typography sx={{ fontWeight: 500 }}>{product ? product.title : 'Загрузка...'}</Typography></Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Количество</Typography><Typography sx={{ fontWeight: 500 }}>1 шт.</Typography></Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}><Typography>Стоимость</Typography><Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>—</Typography></Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}><Typography>Стоимость</Typography><Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>{product ? product.price.toLocaleString() : '—'} ₽</Typography></Box>
                     {timer !== null && (
                       <>
                         <Divider sx={{ my: 2 }} />
@@ -195,8 +202,14 @@ const QueuePage: React.FC = () => {
                         (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                       }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                       <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                        <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {product ? product.title : 'Загрузка...'}
+                        </Typography>
+                        {product && (
+                          <Typography variant="body2" color="text.secondary">
+                            Цена: {product.price.toLocaleString()} ₽
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </Paper>
@@ -271,7 +284,16 @@ const QueuePage: React.FC = () => {
                       <Box component="img" src={productImage} alt="Товар" onError={(e) => {
                         (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                       }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                      <Box><Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography><Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography></Box>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {product ? product.title : 'Загрузка...'}
+                        </Typography>
+                        {product && (
+                          <Typography variant="body2" color="text.secondary">
+                            Цена: {product.price.toLocaleString()} ₽
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   </Paper>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#E8F5E9', border: '2px solid #00C853', mb: 3 }}>
@@ -326,8 +348,14 @@ const QueuePage: React.FC = () => {
                           (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                         }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                         <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                          <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            {product ? product.title : 'Загрузка...'}
+                          </Typography>
+                          {product && (
+                            <Typography variant="body2" color="text.secondary">
+                              Цена: {product.price.toLocaleString()} ₽
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                     </Paper>
@@ -409,8 +437,14 @@ const QueuePage: React.FC = () => {
                         <Box sx={{ display: 'flex', gap: 3 }}>
                           <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                           <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                            <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                              {product ? product.title : 'Загрузка...'}
+                            </Typography>
+                            {product && (
+                              <Typography variant="body2" color="text.secondary">
+                                Цена: {product.price.toLocaleString()} ₽
+                              </Typography>
+                            )}
                           </Box>
                         </Box>
                       </Paper>
@@ -478,8 +512,14 @@ const QueuePage: React.FC = () => {
                               (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                             }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                             <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                              <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
+                              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                {product ? product.title : 'Загрузка...'}
+                              </Typography>
+                              {product && (
+                                <Typography variant="body2" color="text.secondary">
+                                  Цена: {product.price.toLocaleString()} ₽
+                                </Typography>
+                              )}
                             </Box>
                           </Box>
                         </Paper>
@@ -542,8 +582,17 @@ const QueuePage: React.FC = () => {
                             <Box sx={{ display: 'flex', gap: 3 }}>
                               <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
                               <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                                <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
+                                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                  {product ? product.title : 'Загрузка...'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  ID: {ticket.itemId}
+                                </Typography>
+                                {product && (
+                                  <Typography variant="body2" color="text.secondary">
+                                    Цена: {product.price.toLocaleString()} ₽
+                                  </Typography>
+                                )}
                               </Box>
                             </Box>
                           </Paper>
