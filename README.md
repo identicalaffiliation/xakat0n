@@ -67,6 +67,13 @@ backend/
 Используется Hexagonal Architecture(ports & adapters for each module) 
 
 ### Запуск
+Подготовка переменных окружения:
+
+```zsh
+touch .env
+cp .env.template .env
+```
+
 Для локальной разработки и развертывания были описаны Taskfile таргеты:
 
 | Task | Description |
