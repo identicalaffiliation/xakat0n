@@ -39,29 +39,28 @@ const ProductCatalog: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
-
-  // useEffect(() => {
-  //   getItems()
-  //     .then(data => setItems(data || []))
-  //     .catch(console.error)
-  // }, []);
-
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const categories = useMemo(() => {
     const cats = items.map(p => p.category).filter(Boolean) as string[];
     return ['Все', ...new Set(cats)];
   }, [items]);
 
-
-  // useEffect(() => {
-  //   setItems(mockItems);
-  // }, []);
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     getItems()
       .then(data => {
         console.log('Товары из API:', data);
         setItems(data);
       })
-      .catch(err => console.error('Ошибка загрузки товаров:', err));
+      .catch(err => {
+        console.error('Ошибка загрузки товаров:', err);
+        setError('Не удалось загрузить товары. Проверьте подключение к серверу.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   // const filteredItems = useMemo(() => {
@@ -179,11 +178,38 @@ const ProductCatalog: React.FC = () => {
               </Card>
             </Box>
           ))}
-          {filteredItems.length === 0 && (
+          {loading ? (
             <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
-              <Typography variant="body1" color="text.secondary">Загрузка...</Typography>
+              <Typography variant="body1" color="text.secondary">Загрузка товаров...</Typography>
             </Box>
-          )}
+          ) : error ? (
+            <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+                {error}
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  getItems()
+                    .then(data => setItems(data))
+                    .catch(err => {
+                      console.error(err);
+                      setError('Не удалось загрузить товары. Проверьте подключение к серверу.');
+                    })
+                    .finally(() => setLoading(false));
+                }}
+              >
+                Повторить
+              </Button>
+            </Box>
+          ) : filteredItems.length === 0 ? (
+            <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="text.secondary">Ничего не найдено</Typography>
+            </Box>
+          ) : null}
         </Box>
       </Box>
     </Box>
