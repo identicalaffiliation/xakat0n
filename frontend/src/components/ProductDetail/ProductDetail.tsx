@@ -218,6 +218,31 @@ const ProductDetail: React.FC = () => {
           </Paper>
         )}
       </Container>
+      {/* {import.meta.env.DEV && (
+        <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}> Тестовый режим</Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel>Статус заявки</InputLabel>
+            <Select
+              value=""
+              onChange={(e) => {
+                const status = e.target.value;
+                if (!product) return;
+                navigate(`/product/${product.item_id}/queue?mockStatus=${status}`);
+              }}
+              label="Статус заявки"
+            >
+              <MenuItem value="QUEUED">QUEUED</MenuItem>
+              <MenuItem value="OFFERED">OFFERED</MenuItem>
+              <MenuItem value="CHECKOUT">CHECKOUT</MenuItem>
+              <MenuItem value="EXPIRED">EXPIRED</MenuItem>
+              <MenuItem value="CANCELLED">CANCELLED</MenuItem>
+              <MenuItem value="PURCHASED">PURCHASED</MenuItem>
+              <MenuItem value="SOLD_OUT">SOLD_OUT</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      )} */}
     </Box>
   );
 };
