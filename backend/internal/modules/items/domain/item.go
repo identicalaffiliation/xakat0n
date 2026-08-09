@@ -14,6 +14,7 @@ type Item struct {
 	Category    *string
 	IsLimited   bool
 	Stock       int
+	ImagePath   *string
 	CreatedAt   time.Time
 }
 

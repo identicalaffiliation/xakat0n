@@ -145,7 +145,7 @@ const ProductCatalog: React.FC = () => {
                   <CardMedia
                     component="img"
                     height="280"
-                    image={getProductImage(item.item_id)}
+                    image={item.image_url || getProductImage(item.item_id)}
                     // image={`https://picsum.photos/seed/${item.item_id}/200/200`}
                     alt={item.title}
                     onError={(e) => {

@@ -15,3 +15,7 @@ type GetAllItemsUsecase interface {
 type GetItemUsecase interface {
 	GetItem(ctx context.Context, id uuid.UUID) (*dto.Item, error)
 }
+
+type GetSimilarItemsUsecase interface {
+	GetSimilarItems(ctx context.Context, itemID uuid.UUID, limit int) ([]dto.Item, error)
+}

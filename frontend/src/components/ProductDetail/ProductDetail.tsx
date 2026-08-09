@@ -107,7 +107,7 @@ const ProductDetail: React.FC = () => {
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
             <Box sx={{ flex: '0 0 60%', position: 'relative' }}> 
-              <Box component="img" src={getProductImage(product.item_id)} alt={product.title} onError={(e) => {
+              <Box component="img" src={product.image_url || getProductImage(product.item_id)} alt={product.title} onError={(e) => {
                 (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
               }} sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }} />
               {product.is_limited && (

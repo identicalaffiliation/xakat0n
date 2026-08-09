@@ -15,6 +15,7 @@ FROM alpine:3.21
 WORKDIR /app
 
 COPY --from=builder /app/backend .
+COPY --from=builder /app/assets ./assets
 
 ENTRYPOINT ["./backend"]
 CMD ["-c", "config.yml"]
