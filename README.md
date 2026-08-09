@@ -1,71 +1,128 @@
-# xakat0n
+# Авито очередь. Кейс 2
+Сервис реализован в рамках Авито хакатона.
 
-Карта продуктовой документации — `docs/overview.md`. Устройство backend-кода (модули, слои,
-как добавить ручку или новый модуль) — `backend/README.md`.
+Работа велась при помощи:
+* Jira, kan deck
+* New feature -> branch(feature/KAN-№) with pr's.
+* Agile метадологии
 
-## Task installation
+В рамках проекта был реализован CI пайплайн для автоматизации сборки, линтинга и тестирования продукта.
 
-Install [Task](https://taskfile.dev/docs/installation) using Go:
+### Особенность реализации
+Сервис представляет собой модульный MVP монолит, реализующий FIFO атомарную очередь при помощи PostgreSQL для честного доступа к лимитированным товарам. Основная задача сервиса — гарантировать единство пользователя на товар и исключить ситуацию множественных покупок одного товара разными пользователями. Атомарность операций достигается за счет использования row-level locking в PostgreSQL: при постановке в очередь или покупке товара выполняется блокировка конкретной строки товара командой SELECT FOR UPDATE, что позволяет конкурентным запросам корректно обрабатываться последовательно, а не создавать гонки данных. Вся бизнес-логика обернута в транзакции, которые гарантируют, что изменения в очереди и остатках товара применяются атомарно. Для демонстрации полного workflow покупки были реализованы мок-сервисы: inventory/catalogue для управления остатками и информацией о товарах, payment для обработки платежей и auth для авторизации пользователей через JWT. Также был сделан осознанный выбор в пользу HTTP-Pooling, а не Web-Socket в рамках простоты реализации для MVP. Для observability была использована Victoria Metrics с custom dashboard в Grafana. Victoria Metrics является более производительным и легкой технологией для мониторинга и сбора метрик, чем Prometheus. Каждый компонент и инфраструктура проекта запускаются в Docker-контейнерах, что обеспечивает полную изоляцию сервисов и их независимость друг от друга. 
 
-```sh
-go install github.com/go-task/task/v3/cmd/task@latest
+### Стек
+* Go(chi, pgx, goose, slog, testcontainers, etc ..)
+* PostgreSQL
+* Docker
+* Typescript
+* React
+* Victoria Metrics
+* Grafana
+* GolangCI-Lint
+* Playwright
+
+### Структура
+
+```
+backend/
+├── cmd/
+│   └── api/
+│       └── main.go              # composition root: конфиг, логгер, пул, tx.Manager,
+│                                 # конструирует модули, регистрирует их роуты, graceful shutdown
+│
+├── internal/
+│   ├── modules/                 # один каталог — один модуль предметной области
+│   │   └── queue/
+│   │       ├── domain/          # сущности и бизнес-правила, ничего не знает о HTTP/SQL
+│   │       ├── ports/           # интерфейсы, которые нужны application от внешнего мира
+│   │       │                    # (репозиторий, TxManager, Logger) — application зависит
+│   │       │                    # от этих интерфейсов, а не от конкретной реализации
+│   │       ├── dto/             # структуры запроса/ответа usecase'ов (между application и presentation)
+│   │       ├── application/     # usecase'ы: оркестрируют domain + ports, транзакционные границы
+│   │       ├── infrastructure/
+│   │       │   └── postgres/    # реализация ports.*Repository поверх pgx
+│   │       ├── presentation/
+│   │       │   └── http/        # HTTP-хендлеры: разбирают запрос, зовут usecase, сериализуют ответ
+│   │       └── module.go        # собирает репозиторий -> usecase -> хендлер, регистрирует роуты
+│   │
+│   └── shared/                  # инфраструктура, нужная любому модулю — не бизнес-логика
+│       ├── config/              # чтение конфига (yaml + env через cleanenv)
+│       ├── postgres/            # пул соединений (pgxpool), IsUniqueViolation
+│       ├── tx/                  # DBTX-интерфейс, Manager.WithTx, DBTXFromContext
+│       ├── logger/              # Logger-интерфейс + реализация на log/slog
+│       ├── httpserver/          # голый http.Server + chi.Router с общими middleware,
+│       │                        # ничего не знает о роутах конкретных модулей
+│       └── httpx/               # SessionAuth (мидлварь авторизации), EncodeJSON
+│
+├── tests/
+│   └── integrations/            # интеграционные тесты на реальном Postgres (testcontainers)
+│
+├── Dockerfile
+└── go.mod
 ```
 
-Make sure that `$(go env GOPATH)/bin` is included in `PATH`, then verify the
-installation:
+Миграции — в отдельном Go-модуле ../migrator (свой go.mod, свой контейнер в docker-compose.yaml), не в backend.
+
+Используется Hexagonal Architecture(ports & adapters for each module) 
+
+### Запуск
+Для локальной разработки и развертывания были описаны Taskfile таргеты:
+
+| Task | Description |
+|---|---|
+| `task up` | Build and start the entire application |
+| `task down` | Stop all services |
+| `task logs` | Follow logs from all services |
+| `task backend:test` | Run backend integration and unit tests |
+| `task tests:run` | Build and run automated tests |
+| `task clean` | Stop all services and remove volumes |
 
 ```sh
-task --version
+go install github.com/go-task/task/v3/cmd/task@latest # Установка Taskfile
+
+task --version # check taskfile in path
 ```
 
-## Start the application
+Генерация RSA ключей:
+```zsh
+mkdir -p backend/keys
 
-Start PostgreSQL, apply migrations, and launch the backend:
+openssl genpkey \
+  -algorithm RSA \
+  -pkeyopt rsa_keygen_bits:2048 \
+  -out backend/keys/private.pem
 
-```sh
-task up
+openssl pkey \
+  -in backend/keys/private.pem \
+  -pubout \
+  -out backend/keys/public.pem
+
+chmod 600 backend/keys/private.pem
 ```
 
-Stop all services while preserving PostgreSQL data:
-
-```sh
-task down
-```
-
-Follow logs from all services:
-
-```sh
-task logs
-```
-
-Follow logs from an individual service:
-
-```sh
-task postgres:logs
-task migrator:logs
-task backend:logs
-```
-
-## golangci-lint installation
-
-Install the same golangci-lint version that is used in CI by following the
-[official installation guide](https://golangci-lint.run/welcome/install/), or
-run the official binary installation script:
-
-```sh
-curl -sSfL https://golangci-lint.run/install.sh | \
-  sh -s -- -b "$(go env GOPATH)/bin" v2.11.4
-```
-
-Verify the installation:
-
-```sh
-golangci-lint --version
+Приложение полностью конфигурируется при помощи конфига, который расположен по пути:
+```zsh
+./backend/internal/configs/backend.yml
 ```
 
 
-## metrics
-Dashboard available on: http://localhost:4000
-Grafana data:
-Username: admin
-Login: admin
+### Тестирование
+В рамках проекта ключевые модули системы были покрыты e2e, unit и integration тестами:
+* pytest + playwright
+* testcontainers
+* testify
+* testing
+
+Общее покрытие тестами составляет около ~70%.
+
+
+### Grafana
+Метрики и дашборды доступны в Grafana UI:  http://localhost:4000. Метрики собираются с каждой ручки items и queue path: кол-во запросов в секунду, статус коды каждого запроса, urls и тд.
+
+Data:
+* Login: admin
+* Password: admin
+
+
+### Вклад каждого участника
