@@ -39,6 +39,10 @@ const ProductDetail: React.FC = () => {
 
   const handleBuy = async () => {
     if (!product) return;
+    if (product.sold_out) {
+      alert('Товар раскуплен');
+      return;
+    }
     if (product.is_limited) {
       try {
         await enterQueue(product.item_id);
@@ -61,9 +65,11 @@ const ProductDetail: React.FC = () => {
 
   if (!product) return <Typography>Загрузка...</Typography>;
 
-  const stockInfo = product.stock !== undefined && product.stock !== null
-    ? { prefix: 'В наличии: ', suffix: product.stock === 0 ? 'нет в наличии' : product.stock === 1 ? 'один' : 'несколько' }
-    : { prefix: '', suffix: '' };
+  const stockInfo = product.sold_out
+    ? { prefix: '', suffix: 'Раскуплен', color: '#FF6163' }
+    : product.stock !== undefined && product.stock !== null
+      ? { prefix: 'В наличии: ', suffix: product.stock === 0 ? 'нет в наличии' : product.stock === 1 ? 'один' : 'несколько', color: '#00C853' }
+      : { prefix: '', suffix: '', color: '#00C853' };
 
   return (
     <Box sx={{ bgcolor: '#fff', minHeight: '100vh' }}>
@@ -106,13 +112,22 @@ const ProductDetail: React.FC = () => {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
-            <Box sx={{ flex: '0 0 60%', position: 'relative' }}> 
-              <Box component="img" src={product.image_url || getProductImage(product.item_id)} alt={product.title} onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-              }} sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }} />
-              {product.is_limited && (
-                <Chip label="Лимитированный" sx={{ position: 'absolute', top: 16, left: 16, bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '1rem', borderRadius: 3, px: 2, py: 1 }} />
-              )}
+            <Box sx={{ flex: '0 0 60%', position: 'relative' }}>
+              <Box
+                component="img"
+                src={product.image_url || getProductImage(product.item_id)}
+                alt={product.title}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+                }}
+                sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }}
+              />
+              <Box sx={{ position: 'absolute', top: 16, left: 16, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {product.is_limited && (
+                  <Chip label="Лимитированный" sx={{ bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '1rem', borderRadius: 3, px: 2, py: 1 }} />
+                )}
+
+              </Box>
             </Box>
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <Box>
@@ -126,15 +141,21 @@ const ProductDetail: React.FC = () => {
                 {stockInfo.prefix && (
                   <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem' }}>
                     <Box component="span" sx={{ fontWeight: 500, color: '#000' }}>{stockInfo.prefix}</Box>
-                    <Box component="span" sx={{ fontWeight: 600, color: '#00C853' }}>{stockInfo.suffix}</Box>
+                    <Box component="span" sx={{ fontWeight: 600, color: stockInfo.color || '#00C853' }}>{stockInfo.suffix}</Box>
                   </Typography>
                 )}
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>Категория: {product.category || 'Без категории'}</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Опубликовано: сегодня</Typography>
               </Box>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                <Button variant="contained" size="large" sx={{ bgcolor: '#00AAFF', color: '#fff', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { bgcolor: '#0088cc' } }} onClick={handleBuy}>
-                  Купить
+                <Button
+                  variant="contained"
+                  size="large"
+                  sx={{ bgcolor: '#00AAFF', color: '#fff', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { bgcolor: '#0088cc' } }}
+                  onClick={handleBuy}
+                  disabled={product.sold_out}
+                >
+                  {product.sold_out ? 'Товар раскуплен' : 'Купить'}
                 </Button>
                 <Button variant="outlined" size="large" sx={{ borderColor: '#00AAFF', color: '#00AAFF', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { borderColor: '#0088cc', bgcolor: 'rgba(0,170,255,0.04)' } }}>
                   Добавить в корзину

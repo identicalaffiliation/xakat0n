@@ -81,12 +81,12 @@ const ProductCatalog: React.FC = () => {
       return matchCat && matchSearch;
     });
   }, [items, searchQuery, selectedCategory]);
-  const getStockText = (stock?: number | null) => {
+  const getStockText = (stock?: number | null, soldOut?: boolean) => {
+    if (soldOut) return 'Раскуплен';
     if (stock === 0) return 'Нет в наличии';
     if (stock === 1) return 'В наличии: один';
     return 'В наличии: несколько';
   };
-
   const handleProductClick = (itemId: string) => navigate(`/product/${itemId}`);
   const handleClearSearch = () => setSearchQuery('');
 
@@ -140,25 +140,27 @@ const ProductCatalog: React.FC = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 2.5 }}>
           {filteredItems.map(item => (
             <Box key={item.item_id} sx={{ cursor: 'pointer' }} onClick={() => handleProductClick(item.item_id)}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, boxShadow: 'none', overflow: 'hidden' }}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, boxShadow: 'none', overflow: 'hidden', opacity: item.sold_out ? 0.6 : 1}}>
                 <Box sx={{ position: 'relative' }}>
                   <CardMedia
                     component="img"
                     height="280"
                     image={item.image_url || getProductImage(item.item_id)}
-                    // image={`https://picsum.photos/seed/${item.item_id}/200/200`}
                     alt={item.title}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                     }}
                     sx={{ borderRadius: 4 }}
                   />
-                  {item.is_limited && (
-                    <Chip
-                      label="Лимитированный"
-                      sx={{ position: 'absolute', top: 12, left: 12, bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '0.8rem', borderRadius: 3, height: 28 }}
-                    />
-                  )}
+                  <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    {item.is_limited && (
+                      <Chip
+                        label="Лимитированный"
+                        sx={{ bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '0.8rem', borderRadius: 3, height: 28 }}
+                      />
+                    )}
+
+                  </Box>
                 </Box>
                 <CardContent sx={{ flexGrow: 1, p: 1.5, textAlign: 'left' }}>
                   <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 400, fontSize: '1.1rem', lineHeight: 1.3 }}>
@@ -170,8 +172,8 @@ const ProductCatalog: React.FC = () => {
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontSize: '0.9rem' }}>
                     {item.category || 'Без категории'}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#00C853', mt: 0.5, fontSize: '0.9rem' }}>
-                    {getStockText(item.stock)}
+                  <Typography variant="body2" sx={{ fontWeight: 500, color: item.sold_out ? '#FF6163' : '#00C853', mt: 0.5, fontSize: '0.9rem' }}>
+                    {getStockText(item.stock, item.sold_out)}
                   </Typography>
                 </CardContent>
               </Card>
