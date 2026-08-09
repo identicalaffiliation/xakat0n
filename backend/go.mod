@@ -3,6 +3,7 @@ module github.com/identicalaffiliation/xakat0n/backend
 go 1.26.3
 
 require (
+	github.com/VictoriaMetrics/metrics v1.44.0
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
@@ -10,6 +11,11 @@ require (
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
+)
+
+require (
+	github.com/valyala/fastrand v1.1.0 // indirect
+	github.com/valyala/histogram v1.2.0 // indirect
 )
 
 require (

@@ -37,6 +37,9 @@ func TestItemsRepository_GetAll(t *testing.T) {
 		1000,
 		true,
 	)
+	category := "test category"
+	expected.Category = &category
+	expected.Stock = 7
 
 	require.NoError(t, repo.CreateItem(ctx, expected))
 
@@ -47,6 +50,8 @@ func TestItemsRepository_GetAll(t *testing.T) {
 	assert.Equal(t, expected.Title, actual[0].Title)
 	assert.Equal(t, expected.Description, actual[0].Description)
 	assert.Equal(t, expected.Price, actual[0].Price)
+	assert.Equal(t, expected.Category, actual[0].Category)
+	assert.Equal(t, expected.Stock, actual[0].Stock)
 }
 
 func TestItemsRepository_GetItemByID(t *testing.T) {

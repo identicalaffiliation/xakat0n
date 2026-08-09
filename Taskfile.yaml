@@ -2,11 +2,9 @@ version: "3"
 
 tasks:
   up:
-    desc: Start PostgreSQL, apply migrations, and start the backend
+    desc: Build and start the entire application; backend waits for migrations
     cmds:
-      - task: db:up
-      - task: migrator:up
-      - task: backend:up
+      - docker compose up --build --detach
 
   down:
     desc: Stop all services
@@ -64,16 +62,16 @@ tasks:
       - task: backend:modules
       - task: backend:check
 
-  db:up:
+  postgres:up:
     desc: Start PostgreSQL and wait until it is ready
     cmds:
       - docker compose up --detach --wait postgres
 
-  db:down:
+  postgres:down:
     desc: Stop PostgreSQL
     cmds:
-      - docker compose down
-  db:logs:
+      - docker compose stop postgres
+  postgres:logs:
     desc: Follow PostgreSQL logs
     cmds:
       - docker compose logs --follow postgres
@@ -90,6 +88,19 @@ tasks:
     desc: Follow backend logs
     cmds:
       - docker compose logs --follow backend
+
+  frontend:up:
+    desc: Build and start frontend service
+    cmds:
+      - docker compose up --build --detach frontend
+  frontend:down:
+    desc: Stop frontend service
+    cmds:
+      - docker compose stop frontend
+  frontend:logs:
+    desc: Follow frontend logs
+    cmds:
+      - docker compose logs --follow frontend
 
   migrator:up:
     desc: migrations up
@@ -156,6 +167,21 @@ tasks:
     cmds:
       - task: migrator:modules
       - task: migrator:check
+
+  metrics:up:
+    desc: Start VictoriaMetrics and Grafana
+    cmds:
+      - docker compose up --detach victoriametrics grafana
+
+  metrics:down:
+    desc: Stop VictoriaMetrics and Grafana
+    cmds:
+      - docker compose down victoriametrics grafana
+
+  metrics:logs:
+    desc: Follow VictoriaMetrics and Grafana logs
+    cmds:
+      - docker compose logs --follow victoriametrics grafana
 
   clean:
     cmds:

@@ -74,6 +74,47 @@ func TestQueueRepository_CountTaken(t *testing.T) {
 	assert.Equal(t, 3, taken)
 }
 
+func TestQueueRepository_CountPurchased(t *testing.T) {
+	t.Run("counts only PURCHASED, grouped per item, omits items with none", func(t *testing.T) {
+		truncate(db, t)
+
+		ctx := context.Background()
+		repo := postgres.NewQueueRepository(db)
+		now := time.Now().UTC()
+
+		itemWithTwoPurchases := uuid.New()
+		seedTicket(t, uuid.New(), itemWithTwoPurchases, uuid.New(), domain.QueueStatusPurchased, now, nil)
+		seedTicket(t, uuid.New(), itemWithTwoPurchases, uuid.New(), domain.QueueStatusPurchased, now, nil)
+		seedTicket(t, uuid.New(), itemWithTwoPurchases, uuid.New(), domain.QueueStatusQueued, now, nil)
+
+		itemWithNoPurchases := uuid.New()
+		seedTicket(t, uuid.New(), itemWithNoPurchases, uuid.New(), domain.QueueStatusOffered, now, nil)
+
+		itemNotRequested := uuid.New()
+		seedTicket(t, uuid.New(), itemNotRequested, uuid.New(), domain.QueueStatusPurchased, now, nil)
+
+		counts, err := repo.CountPurchased(ctx, []uuid.UUID{itemWithTwoPurchases, itemWithNoPurchases})
+		require.NoError(t, err)
+
+		assert.Equal(t, 2, counts[itemWithTwoPurchases])
+		_, ok := counts[itemWithNoPurchases]
+		assert.False(t, ok)
+		_, ok = counts[itemNotRequested]
+		assert.False(t, ok)
+	})
+
+	t.Run("empty input returns empty map without querying", func(t *testing.T) {
+		truncate(db, t)
+
+		ctx := context.Background()
+		repo := postgres.NewQueueRepository(db)
+
+		counts, err := repo.CountPurchased(ctx, nil)
+		require.NoError(t, err)
+		assert.Empty(t, counts)
+	})
+}
+
 func TestQueueRepository_PromoteNext(t *testing.T) {
 	t.Run("promotes exactly freeSlots earliest by created_at", func(t *testing.T) {
 		truncate(db, t)

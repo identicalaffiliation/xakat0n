@@ -9,9 +9,9 @@ import (
 )
 
 type GetAllItemsUsecase interface {
-	GetAllItems(ctx context.Context) (*dto.ItemsResponse, error)
+	GetAllItems(ctx context.Context) ([]dto.Item, error)
 }
 
 type GetItemUsecase interface {
-	GetItem(ctx context.Context, id uuid.UUID) (*dto.ItemResponse, error)
+	GetItem(ctx context.Context, id uuid.UUID) (*dto.Item, error)
 }

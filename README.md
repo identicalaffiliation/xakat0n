@@ -41,7 +41,7 @@ task logs
 Follow logs from an individual service:
 
 ```sh
-task db:logs
+task postgres:logs
 task migrator:logs
 task backend:logs
 ```
@@ -62,3 +62,10 @@ Verify the installation:
 ```sh
 golangci-lint --version
 ```
+
+
+## metrics
+Dashboard available on: http://localhost:4000
+Grafana data:
+Username: admin
+Login: admin

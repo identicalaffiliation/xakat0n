@@ -20,7 +20,7 @@ func GetItems(usecase ports.GetAllItemsUsecase) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		items, err := usecase.GetAllItems(request.Context())
 		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			httpx.WriteError(writer, http.StatusInternalServerError, "internal_error", "internal server error")
 			return
 		}
 
@@ -32,7 +32,7 @@ func GetItem(usecase ports.GetItemUsecase) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		id, err := uuid.Parse(chi.URLParam(request, ItemIdMuxPattern))
 		if err != nil {
-			http.Error(writer, "invalid item id", http.StatusBadRequest)
+			httpx.WriteError(writer, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
 		}
 
@@ -40,12 +40,11 @@ func GetItem(usecase ports.GetItemUsecase) http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrItemNotFound):
-				http.Error(writer, "item not found", http.StatusNotFound)
-				return
+				httpx.WriteError(writer, http.StatusNotFound, "item_not_found", "item not found")
 			default:
-				http.Error(writer, err.Error(), http.StatusInternalServerError)
-				return
+				httpx.WriteError(writer, http.StatusInternalServerError, "internal_error", "internal server error")
 			}
+			return
 		}
 
 		httpx.EncodeJSON(writer, item, http.StatusOK)
