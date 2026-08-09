@@ -19,12 +19,15 @@ type customLoggerStub struct {
 func (l *customLoggerStub) DebugContext(_ context.Context, msg string, _ ...any) {
 	l.level, l.msg = "debug", msg
 }
+
 func (l *customLoggerStub) InfoContext(_ context.Context, msg string, _ ...any) {
 	l.level, l.msg = "info", msg
 }
+
 func (l *customLoggerStub) WarnContext(_ context.Context, msg string, _ ...any) {
 	l.level, l.msg = "warn", msg
 }
+
 func (l *customLoggerStub) ErrorContext(_ context.Context, msg string, _ ...any) {
 	l.level, l.msg = "error", msg
 }
