@@ -39,29 +39,28 @@ const ProductCatalog: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Все');
-
-  // useEffect(() => {
-  //   getItems()
-  //     .then(data => setItems(data || []))
-  //     .catch(console.error)
-  // }, []);
-
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const categories = useMemo(() => {
     const cats = items.map(p => p.category).filter(Boolean) as string[];
     return ['Все', ...new Set(cats)];
   }, [items]);
 
-
-  // useEffect(() => {
-  //   setItems(mockItems);
-  // }, []);
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     getItems()
       .then(data => {
         console.log('Товары из API:', data);
         setItems(data);
       })
-      .catch(err => console.error('Ошибка загрузки товаров:', err));
+      .catch(err => {
+        console.error('Ошибка загрузки товаров:', err);
+        setError('Не удалось загрузить товары. Проверьте подключение к серверу.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   // const filteredItems = useMemo(() => {
@@ -81,12 +80,12 @@ const ProductCatalog: React.FC = () => {
       return matchCat && matchSearch;
     });
   }, [items, searchQuery, selectedCategory]);
-  const getStockText = (stock?: number | null) => {
+  const getStockText = (stock?: number | null, soldOut?: boolean) => {
+    if (soldOut) return 'Раскуплен';
     if (stock === 0) return 'Нет в наличии';
     if (stock === 1) return 'В наличии: один';
     return 'В наличии: несколько';
   };
-
   const handleProductClick = (itemId: string) => navigate(`/product/${itemId}`);
   const handleClearSearch = () => setSearchQuery('');
 
@@ -140,25 +139,27 @@ const ProductCatalog: React.FC = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 2.5 }}>
           {filteredItems.map(item => (
             <Box key={item.item_id} sx={{ cursor: 'pointer' }} onClick={() => handleProductClick(item.item_id)}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, boxShadow: 'none', overflow: 'hidden' }}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, boxShadow: 'none', overflow: 'hidden', opacity: item.sold_out ? 0.6 : 1}}>
                 <Box sx={{ position: 'relative' }}>
                   <CardMedia
                     component="img"
                     height="280"
                     image={item.image_url || getProductImage(item.item_id)}
-                    // image={`https://picsum.photos/seed/${item.item_id}/200/200`}
                     alt={item.title}
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                     }}
                     sx={{ borderRadius: 4 }}
                   />
-                  {item.is_limited && (
-                    <Chip
-                      label="Лимитированный"
-                      sx={{ position: 'absolute', top: 12, left: 12, bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '0.8rem', borderRadius: 3, height: 28 }}
-                    />
-                  )}
+                  <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    {item.is_limited && (
+                      <Chip
+                        label="Лимитированный"
+                        sx={{ bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '0.8rem', borderRadius: 3, height: 28 }}
+                      />
+                    )}
+
+                  </Box>
                 </Box>
                 <CardContent sx={{ flexGrow: 1, p: 1.5, textAlign: 'left' }}>
                   <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 400, fontSize: '1.1rem', lineHeight: 1.3 }}>
@@ -170,18 +171,45 @@ const ProductCatalog: React.FC = () => {
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, fontSize: '0.9rem' }}>
                     {item.category || 'Без категории'}
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500, color: '#00C853', mt: 0.5, fontSize: '0.9rem' }}>
-                    {getStockText(item.stock)}
+                  <Typography variant="body2" sx={{ fontWeight: 500, color: item.sold_out ? '#FF6163' : '#00C853', mt: 0.5, fontSize: '0.9rem' }}>
+                    {getStockText(item.stock, item.sold_out)}
                   </Typography>
                 </CardContent>
               </Card>
             </Box>
           ))}
-          {filteredItems.length === 0 && (
+          {loading ? (
+            <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="text.secondary">Загрузка товаров...</Typography>
+            </Box>
+          ) : error ? (
+            <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
+              <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+                {error}
+              </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  getItems()
+                    .then(data => setItems(data))
+                    .catch(err => {
+                      console.error(err);
+                      setError('Не удалось загрузить товары. Проверьте подключение к серверу.');
+                    })
+                    .finally(() => setLoading(false));
+                }}
+              >
+                Повторить
+              </Button>
+            </Box>
+          ) : filteredItems.length === 0 ? (
             <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
               <Typography variant="body1" color="text.secondary">Ничего не найдено</Typography>
             </Box>
-          )}
+          ) : null}
         </Box>
       </Box>
     </Box>

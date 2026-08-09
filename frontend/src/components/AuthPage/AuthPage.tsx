@@ -6,16 +6,31 @@ import { login } from '../../api/auth';
 const AuthPage = () => {
   const [username, setUsername] = useState('');
   const navigate = useNavigate();
-
+  const [isLoading, setIsLoading] = useState(false);
   const handleLogin = async () => {
-    if (!username.trim()) return alert('Введите имя');
+    const trimmed = username.trim();
+    if (trimmed.length == 0) {
+      alert('Пожалуйста, введите свое имя');
+      return;
+    }
+    if (trimmed.length < 3 && trimmed.length > 0) {
+      alert('Имя должно содержать минимум 3 символа');
+      return;
+    }
+    if (trimmed.length > 32) {
+      alert('Имя не должно превышать 32 символа');
+      return;
+    }
+    setIsLoading(true);
     try {
-      const data = await login(username);
+      const data = await login(trimmed);
       sessionStorage.setItem('sessionToken', data.token);
       navigate('/products');
     } catch (error) {
       console.error(error);
-      alert('Ошибка входа');
+      alert('Не удалось войти. Проверьте подключение к серверу.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -37,10 +52,11 @@ const AuthPage = () => {
         <Button
           fullWidth
           variant="contained"
-          sx={{ bgcolor: '#00AAFF', color: '#fff', height: 48, borderRadius: 2, textTransform: 'none', fontWeight: 600, '&:hover': { bgcolor: '#0088cc' } }}
+          disabled={isLoading}
+          sx={{ bgcolor: '#00AAFF', color: '#fff', height: 48, borderRadius: 2, textTransform: 'none', fontWeight: 600, '&:hover': { bgcolor: '#0088cc' }, '&:disabled': { bgcolor: '#8ac4e0' } }}
           onClick={handleLogin}
         >
-          Войти
+          {isLoading ? 'Вход...' : 'Войти'}
         </Button>
         <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
           Войдите, чтобы продолжить покупки

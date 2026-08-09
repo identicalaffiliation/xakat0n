@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams} from 'react-router-dom';
 import {
   Box, Typography, Button, Paper, Container, CircularProgress, Divider, Grid,
   TextField, AppBar, Toolbar, IconButton
@@ -8,6 +8,7 @@ import { Person, FavoriteBorder } from '@mui/icons-material';
 import { getQueueStatus, cancelQueue, startCheckout, paymentCallback, type Ticket } from '../../api/queue';
 import { getItem, getSimilar, type Item } from '../../api/items';
 import { getProductImage } from '../../utils/imageUtils';
+
 const QueuePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const QueuePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [timer, setTimer] = useState<number | null>(null);
 
+  // const [searchParams] = useSearchParams();
+  // const mockStatus = searchParams.get('mockStatus') as Ticket['status'] | null;
   useEffect(() => {
     if (!id) return;
     getItem(id).then(setProduct).catch(console.error);
@@ -43,6 +46,44 @@ const QueuePage: React.FC = () => {
     interval = setInterval(fetchStatus, 2000);
     return () => clearInterval(interval);
   }, [id]);
+  // useEffect(() => {
+  //   if (!id) return;
+  //   if (mockStatus) {
+  //     //Создаём мок
+  //     const mockTicket: Ticket = {
+  //       ticketId: 'mock',
+  //       itemId: id,
+  //       status: mockStatus,
+  //       position: mockStatus === 'QUEUED' ? 3 : null,
+  //       nextSlotFreeInSeconds: mockStatus === 'QUEUED' ? 120 : null,
+  //       expiresInSeconds: mockStatus === 'OFFERED' || mockStatus === 'CHECKOUT' ? 120 : null,
+  //       expiresAt: null,
+  //       createdAt: new Date().toISOString(),
+  //       serverTime: new Date().toISOString(),
+  //     };
+  //     setTicket(mockTicket);
+  //     setLoading(false);
+  //     return;
+  //   }
+  //   let interval: ReturnType<typeof setInterval>;
+  //   const fetchStatus = async () => {
+  //     try {
+  //       const data = await getQueueStatus(id);
+  //       setTicket(data);
+  //       if (data.expiresInSeconds !== null) setTimer(data.expiresInSeconds);
+  //       if (['PURCHASED', 'EXPIRED', 'SOLD_OUT', 'CANCELLED'].includes(data.status)) {
+  //         clearInterval(interval);
+  //       }
+  //     } catch (error) {
+  //       setTicket(null);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchStatus();
+  //   interval = setInterval(fetchStatus, 2000);
+  //   return () => clearInterval(interval);
+  // }, [id, mockStatus]);
 
   useEffect(() => {
     if (ticket?.expiresInSeconds === null || ticket?.expiresInSeconds === undefined) {
@@ -63,7 +104,7 @@ const QueuePage: React.FC = () => {
   }, [ticket?.expiresInSeconds]);
   useEffect(() => {
     if (!id) return;
-    if (ticket && ['QUEUED', 'EXPIRED', 'CANCELLED'].includes(ticket.status)) {
+    if (ticket && ['QUEUED', 'EXPIRED', 'CANCELLED', 'PURCHASED', 'SOLD_OUT'].includes(ticket.status)) {
       getSimilar(id, 3).then(setSimilar).catch(console.error);
     }
   }, [id, ticket?.status]);
@@ -98,6 +139,32 @@ const QueuePage: React.FC = () => {
   );
 
   const productImage = product?.image_url || getProductImage(ticket.itemId);
+  const renderProductCard = () => (
+    <Grid size={{ xs: 12, md: 7 }}>
+      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9' }}>
+        <Box sx={{ display: 'flex', gap: 3 }}>
+          <Box
+            component="img"
+            src={productImage}
+            alt="Товар"
+            onError={(e) => (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg'}
+            sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }}
+          />
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {product ? product.title : 'Загрузка...'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Категория: {product?.category || 'Без категории'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Цена: {product ? product.price.toLocaleString() : '—'} ₽
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
+    </Grid>
+  );
   const renderContent = () => {
     switch (ticket.status) {
       case 'CHECKOUT':
@@ -107,50 +174,74 @@ const QueuePage: React.FC = () => {
             <Container maxWidth="lg" sx={{ py: 4 }}>
               <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>Оформление заказа</Typography>
               <Grid container spacing={4}>
-                <Grid size={{ xs: 12, md: 7 }}>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box component="img" src={productImage} alt="Товар" onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-                      }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                        <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
-                      </Box>
-                    </Box>
-                  </Paper>
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                    <Typography variant="body2"><strong>Описание:</strong> Товар зарезервирован для вас.</Typography>
-                  </Paper>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>Данные получателя</Typography>
-                    <TextField fullWidth label="ФИО получателя" variant="outlined" size="small" value="Иванов Иван Иванович" sx={{ mb: 2 }} slotProps={{ input: { readOnly: true } }} />
-                    <TextField fullWidth label="Контактный телефон" variant="outlined" size="small" value="+7 (999) 123-45-67" slotProps={{ input: { readOnly: true } }} />
-                  </Paper>
-                  <Button variant="contained" color="primary" onClick={() => navigate(`/product/${ticket.itemId}`)}>Назад</Button>
-                </Grid>
+                {renderProductCard()}
                 <Grid size={{ xs: 12, md: 5 }}>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Детали заказа</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Товар</Typography><Typography sx={{ fontWeight: 500 }}>ID {ticket.itemId}</Typography></Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}><Typography>Количество</Typography><Typography sx={{ fontWeight: 500 }}>1 шт.</Typography></Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}><Typography>Стоимость</Typography><Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>—</Typography></Box>
-                    {timer !== null && (
-                      <>
-                        <Divider sx={{ my: 2 }} />
-                        <Box sx={{ textAlign: 'center', mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary">Осталось времени для оплаты</Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
-                            <CircularProgress variant="determinate" value={((timer || 0) / 120) * 100} size={64} />
-                            <Typography variant="h2" sx={{ fontWeight: 700, fontSize: '2.5rem' }}>{formatTime(timer || 0)}</Typography>
-                          </Box>
-                        </Box>
-                      </>
-                    )}
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+                      Оформление заказа
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                      <CircularProgress
+                        variant="determinate"
+                        value={((timer || 0) / 120) * 100}
+                        size={80}
+                        sx={{ color: 'primary.main' }}
+                      />
+                      <Typography variant="h4" sx={{ fontWeight: 700, ml: 2 }}>
+                        {formatTime(timer || 0)}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
+                      Осталось времени для оплаты. Успейте завершить покупку.
+                    </Typography>
+
+                    {/* Детали заказа */}
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>Детали заказа</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography>Товар</Typography>
+                      <Typography sx={{ fontWeight: 500 }}>{product ? product.title : 'Загрузка...'}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography>Количество</Typography>
+                      <Typography sx={{ fontWeight: 500 }}>1 шт.</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                      <Typography>Стоимость</Typography>
+                      <Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
+                        {product ? product.price.toLocaleString() : '—'} ₽
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>Данные получателя</Typography>
+                    <TextField
+                      fullWidth
+                      label="ФИО получателя"
+                      variant="outlined"
+                      size="small"
+                      value="Иванов Иван Иванович"
+                      sx={{ mb: 2 }}
+                      slotProps={{ input: { readOnly: true } }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Контактный телефон"
+                      variant="outlined"
+                      size="small"
+                      value="+7 (999) 123-45-67"
+                      sx={{ mb: 2 }}
+                      slotProps={{ input: { readOnly: true } }}
+                    />
                     <Divider sx={{ my: 2 }} />
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Промокод</Typography><Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography></Paper>
-                      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Скидка по карте</Typography><Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography></Paper>
+                      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}>
+                        <Typography variant="caption" color="text.secondary">Промокод</Typography>
+                        <Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography>
+                      </Paper>
+                      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}>
+                        <Typography variant="caption" color="text.secondary">Скидка по карте</Typography>
+                        <Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography>
+                      </Paper>
                     </Box>
                     <Button
                       variant="contained"
@@ -169,7 +260,22 @@ const QueuePage: React.FC = () => {
                     >
                       Оплатить
                     </Button>
-                    <Button variant="outlined" color="secondary" fullWidth sx={{ borderWidth: '3px' }} onClick={async () => { await cancelQueue(ticket.itemId); navigate(`/product/${ticket.itemId}`); }}>Отменить заказ</Button>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      sx={{ borderWidth: '3px' }}
+                      onClick={async () => {
+                        await cancelQueue(ticket.itemId);
+                        navigate(`/product/${ticket.itemId}`);
+                      }}
+                    >
+                      Отменить заказ
+                    </Button>
+
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
+                      Нажимая «Оплатить», вы соглашаетесь с условиями оферты и политикой обработки данных.
+                    </Typography>
                   </Paper>
                 </Grid>
               </Grid>
@@ -188,55 +294,44 @@ const QueuePage: React.FC = () => {
             <Container maxWidth="lg" sx={{ py: 4 }}>
               <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>Очередь ожидания на лимитированный товар</Typography>
               <Grid container spacing={4}>
-                <Grid size={{ xs: 12, md: 7 }}>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box component="img" src={productImage} alt="Товар" onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-                      }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                        <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
-                      </Box>
-                    </Box>
-                  </Paper>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                    <Box sx={{ display: 'flex', gap: 6, mb: 2 }}>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Ваше место</Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>{ticket.position ?? '?'}</Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Макс. время ожидания</Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {ticket.nextSlotFreeInSeconds ? `${Math.floor(ticket.nextSlotFreeInSeconds / 60)} мин` : '~8 мин'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
-                      Краткое описание в зависимости от статуса, чтобы дать пользователю понять на каком этапе он находится
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Вы в очереди. Как только товар освободится, у вас будет 1 минута на оформление.
-                    </Typography>
-                  </Paper>
-                  <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-                    <Button variant="contained" color="primary" onClick={() => navigate('/products')}>Перейти в каталог</Button>
-                    <Button variant="outlined" color="secondary" onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Выйти из очереди</Button>
-                  </Box>
-                </Grid>
+                {renderProductCard()}
                 <Grid size={{ xs: 12, md: 5 }}>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус ожидания</Typography>
-                    <Box sx={{ textAlign: 'center', mb: 2 }}>
-                      <CircularProgress variant="determinate" value={((timer || 0) / 480) * 100} size={80} sx={{ color: 'primary.main' }} />
-                      <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>{formatTime(timer || 0)}</Typography>
-                      <Typography variant="body2" color="text.secondary">Осталось до получения права</Typography>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="body1" gutterBottom><strong>Краткая информация</strong></Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Когда подойдёт ваша очередь, вы получите уведомление и сможете перейти к оформлению.</Typography>
-                    <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${ticket.itemId}`)}>Назад к товару</Button>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
+                      Вы {ticket.position ? `${ticket.position}-й` : 'в'} очереди
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      Место освободится не позже чем через{' '}
+                      {ticket.nextSlotFreeInSeconds
+                        ? formatTime(ticket.nextSlotFreeInSeconds)
+                        : 'несколько секунд'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      Как только товар освободится, вы получите право на покупку.
+                    </Typography>
+                    
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      sx={{ py: 1.5, mb: 1 }}
+                      onClick={() => navigate('/products')}
+                    >
+                      Перейти в каталог
+                    </Button>
+                    
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      sx={{ py: 1.5 }}
+                      onClick={async () => {
+                        await cancelQueue(ticket.itemId);
+                        navigate('/products');
+                      }}
+                    >
+                      Выйти из очереди
+                    </Button>
                   </Paper>
                 </Grid>
               </Grid>
@@ -263,50 +358,90 @@ const QueuePage: React.FC = () => {
           <Box>
             {renderHeader()}
             <Container maxWidth="lg" sx={{ py: 4 }}>
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>Очередь ожидания на лимитированный товар</Typography>
+              <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>
+                Очередь ожидания на лимитированный товар
+              </Typography>
               <Grid container spacing={4}>
                 <Grid size={{ xs: 12, md: 7 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
                     <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box component="img" src={productImage} alt="Товар" onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-                      }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                      <Box><Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography><Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography></Box>
+                      <Box
+                        component="img"
+                        src={productImage}
+                        alt="Товар"
+                        onError={(e) => (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg'}
+                        sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }}
+                      />
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {product ? product.title : 'Загрузка...'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Категория: {product?.category || 'Без категории'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Цена: {product ? product.price.toLocaleString() : '—'} ₽
+                        </Typography>
+                      </Box>
                     </Box>
                   </Paper>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#E8F5E9', border: '2px solid #00C853', mb: 3 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#00C853', mb: 1 }}>Товар освободился!</Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>Вы можете перейти к оформлению заказа. У вас есть {formatTime(timer || 60)} на оплату.</Typography>
-                    <Button variant="contained" color="primary" size="large" onClick={async () => { await startCheckout(ticket.itemId); navigate(`/product/${ticket.itemId}/checkout`); }}>Перейти к оформлению</Button>
-                    <Button variant="outlined" color="secondary" sx={{ ml: 2 }} onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Отказаться</Button>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Будьте внимательны:</strong> вы можете приобрести товар только в указанное время, иначе право будет передано следующему в очереди.
+                    </Typography>
                   </Paper>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                    <Box sx={{ display: 'flex', gap: 6, mb: 2 }}>
-                      <Box><Typography variant="body2" color="text.secondary">Макс. время ожидания</Typography><Typography variant="h5" sx={{ fontWeight: 700 }}>~8 мин</Typography></Box>
-                    </Box>
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>Краткое описание</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Товар освободился! У вас есть {formatTime(timer || 60)} на оформление.</Typography>
-                  </Paper>
-                  <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-                    <Button variant="contained" color="primary" onClick={() => navigate('/products')}>Перейти в каталог</Button>
-                    <Button variant="outlined" color="secondary" onClick={async () => { await cancelQueue(ticket.itemId); navigate('/products'); }}>Выйти из очереди</Button>
-                  </Box>
                 </Grid>
+                {/* Правая колонка */}
                 <Grid size={{ xs: 12, md: 5 }}>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус ожидания</Typography>
-                    <Box sx={{ textAlign: 'center', mb: 2 }}>
-                      <CircularProgress variant="determinate" value={((timer || 0) / 60) * 100} size={80} sx={{ color: 'primary.main' }} />
-                      <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>{formatTime(timer || 0)}</Typography>
-                      <Typography variant="body2" color="text.secondary">Осталось для оформления</Typography>
+                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#00C853' }}>
+                      Товар ваш!
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                      <CircularProgress
+                        variant="determinate"
+                        value={((timer || 0) / 60) * 100}
+                        size={80}
+                        sx={{ color: 'primary.main' }}
+                      />
+                      <Typography variant="h4" sx={{ fontWeight: 700, ml: 2 }}>
+                        {formatTime(timer || 0)}
+                      </Typography>
                     </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="body1" gutterBottom><strong>Краткая информация</strong></Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Вы получили право на покупку! Оплатите в течение {formatTime(timer || 60)}.</Typography>
-                    <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }} onClick={() => navigate(`/product/${ticket.itemId}`)}>Назад к товару</Button>
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
+                      У вас есть время, чтобы перейти к оформлению и оплатить заказ.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      sx={{ py: 1.5, mb: 1 }}
+                      onClick={async () => {
+                        await startCheckout(ticket.itemId);
+                        navigate(`/product/${ticket.itemId}/checkout`);
+                      }}
+                    >
+                      Перейти к оформлению
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      onClick={async () => {
+                        await cancelQueue(ticket.itemId);
+                        navigate('/products');
+                      }}
+                    >
+                      Отказаться
+                    </Button>
                   </Paper>
                 </Grid>
               </Grid>
+              <Box sx={{ mt: 4, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Похожие товары скрыты, чтобы вы не потеряли эту возможность.
+                </Typography>
+              </Box>
             </Container>
           </Box>
         );
@@ -319,61 +454,26 @@ const QueuePage: React.FC = () => {
                   Время вышло
                 </Typography>
                 <Grid container spacing={4}>
-                  <Grid size={{ xs: 12, md: 7 }}>
-                    <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                      <Box sx={{ display: 'flex', gap: 3 }}>
-                        <Box component="img" src={productImage} alt="Товар" onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-                        }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                        <Box>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                          <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
-                        </Box>
-                      </Box>
-                    </Paper>
-                    <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>Время на оплату истекло</strong>
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Вы не оплатили товар вовремя. Товар вернулся в продажу и достался следующему в очереди.
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 4, mt: 2 }}>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">Ваше место</Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 700 }}>—</Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">Макс. время ожидания</Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 700 }}>~8 мин</Typography>
-                        </Box>
-                      </Box>
-                    </Paper>
-                  </Grid>
+                  {renderProductCard()}
                   <Grid size={{ xs: 12, md: 5 }}>
-                    <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                      <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
-                      <Box sx={{ textAlign: 'center', py: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, color: '#FF6163', mb: 1 }}>
-                          Вы не оплатили товар вовремя
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'left' }}>
-                          К сожалению, вы не успели завершить оплату в отведённое время. Товар вернулся в продажу и достался следующему в очереди.
-                        </Typography>
-                      </Box>
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#FF6163' }}>
+                        Время вышло
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        Право на покупку истекло, товар вернулся в продажу и достался следующему в очереди.
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Вы можете встать в очередь заново, если товар ещё доступен.
+                      </Typography>
                       <Button
                         variant="contained"
                         color="primary"
                         fullWidth
                         sx={{ py: 1.5 }}
-                        onClick={() => {
-                          navigate(`/product/${ticket.itemId}`);
-                        }}
+                        onClick={() => navigate(`/product/${ticket.itemId}`)}
                       >
-                        Встать в очередь
-                      </Button>
-                      <Button variant="outlined" fullWidth sx={{ mt: 1 }} onClick={() => navigate('/products')}>
-                        На главную
+                        Встать в очередь заново
                       </Button>
                     </Paper>
                   </Grid>
@@ -404,32 +504,15 @@ const QueuePage: React.FC = () => {
                     Вы вышли из очереди
                   </Typography>
                   <Grid container spacing={4}>
-                    <Grid size={{ xs: 12, md: 7 }}>
-                      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                        <Box sx={{ display: 'flex', gap: 3 }}>
-                          <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                          <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                            <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
-                          </Box>
-                        </Box>
-                      </Paper>
-                      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>Вы вышли из очереди</strong>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Ваше место передано следующему участнику. Вы можете встать в очередь заново (в конец).
-                        </Typography>
-                      </Paper>
-                    </Grid>
+                    {renderProductCard()}
                     <Grid size={{ xs: 12, md: 5 }}>
-                      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
-                        <Box sx={{ textAlign: 'center', py: 3 }}>
-                          <Typography variant="h2" sx={{ fontSize: '4rem' }}></Typography>
-                          <Typography variant="h5" sx={{ fontWeight: 700, color: '#FF6163' }}>Выход из очереди</Typography>
-                        </Box>
+                      <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                        <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#FF6163' }}>
+                          Вы вышли из очереди
+                        </Typography>
+                        <Typography variant="body1" sx={{ mb: 2 }}>
+                          Место передано следующему участнику. Можно встать заново — в конец очереди.
+                        </Typography>
                         <Button
                           variant="contained"
                           color="primary"
@@ -437,10 +520,7 @@ const QueuePage: React.FC = () => {
                           sx={{ py: 1.5 }}
                           onClick={() => navigate(`/product/${ticket.itemId}`)}
                         >
-                          Встать в очередь
-                        </Button>
-                        <Button variant="outlined" fullWidth sx={{ mt: 1 }} onClick={() => navigate('/products')}>
-                          На главную
+                          Встать в очередь заново
                         </Button>
                       </Paper>
                     </Grid>
@@ -471,42 +551,30 @@ const QueuePage: React.FC = () => {
                       Покупка оформлена
                     </Typography>
                     <Grid container spacing={4}>
-                      <Grid size={{ xs: 12, md: 7 }}>
-                        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                          <Box sx={{ display: 'flex', gap: 3 }}>
-                            <Box component="img" src={productImage} alt="Товар" onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-                            }} sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                            <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                              <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
-                            </Box>
-                          </Box>
-                        </Paper>
-                        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                          <Typography variant="body1" sx={{ mb: 1 }}>
-                            <strong>Заказ передан в доставку</strong>
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Спасибо за покупку! Вы можете отслеживать статус заказа в личном кабинете.
-                          </Typography>
-                        </Paper>
-                        <Button variant="contained" color="primary" onClick={() => alert('Перейти к заказу')}>
-                          Перейти к заказу
-                        </Button>
-                      </Grid>
+                      {renderProductCard()}
                       <Grid size={{ xs: 12, md: 5 }}>
-                        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                          <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
-                          <Box sx={{ textAlign: 'center', py: 3 }}>
-                            <Typography variant="h2" sx={{ fontSize: '4rem' }}></Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700, color: '#00C853' }}>Покупка оформлена</Typography>
-                          </Box>
-                          <Button variant="contained" color="success" fullWidth sx={{ py: 1.5 }} onClick={() => alert('Перейти к заказу')}>
+                        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#000000' }}>
+                            Товар ваш!
+                          </Typography>
+                          <Typography variant="body1" sx={{ mb: 2 }}>
+                            Заказ передан в доставку. Спасибо за покупку!
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            fullWidth
+                            sx={{ bgcolor: '#04e162', py: 1.5, mb: 1 }}
+                            onClick={() => alert('Перейти к заказу')}
+                          >
                             Перейти к заказу
                           </Button>
-                          <Button variant="outlined" fullWidth sx={{ mt: 1 }} onClick={() => navigate('/products')}>
-                            Купить ещё
+                          <Button
+                            variant="outlined"
+                            fullWidth
+                            sx={{ py: 1.5 }}
+                            onClick={() => navigate('/products')}
+                          >
+                            Перейти в каталог
                           </Button>
                         </Paper>
                       </Grid>
@@ -537,33 +605,24 @@ const QueuePage: React.FC = () => {
                         Товар раскуплен
                       </Typography>
                       <Grid container spacing={4}>
-                        <Grid size={{ xs: 12, md: 7 }}>
-                          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                            <Box sx={{ display: 'flex', gap: 3 }}>
-                              <Box component="img" src={productImage} alt="Товар" sx={{ width: 120, height: 120, borderRadius: 2, objectFit: 'cover' }} />
-                              <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 600 }}>Товар</Typography>
-                                <Typography variant="body2" color="text.secondary">ID: {ticket.itemId}</Typography>
-                              </Box>
-                            </Box>
-                          </Paper>
-                          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f9f9f9', mb: 3 }}>
-                            <Typography variant="body1" sx={{ mb: 1 }}>
-                              <strong>Все единицы выкуплены</strong>
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Товар полностью распродан. Вы можете посмотреть похожие товары у других продавцов.
-                            </Typography>
-                          </Paper>
-                        </Grid>
+                        {renderProductCard()}
                         <Grid size={{ xs: 12, md: 5 }}>
-                          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5', mt: -2 }}>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Статус</Typography>
-                            <Box sx={{ textAlign: 'center', py: 3 }}>
-                              <Typography variant="h2" sx={{ fontSize: '4rem' }}></Typography>
-                              <Typography variant="h5" sx={{ fontWeight: 700, color: '#FF6163' }}>Раскуплено</Typography>
-                            </Box>
-                            <Button variant="contained" fullWidth sx={{ py: 1.5 }} onClick={() => navigate('/products')}>
+                          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
+                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#FF6163' }}>
+                              Товар раскуплен
+                            </Typography>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                              Все единицы выкуплены, пока вы ждали.
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              Посмотрите похожие товары ниже.
+                            </Typography>
+                            <Button
+                              variant="contained"
+                              fullWidth
+                              sx={{ bgcolor: '#00AAFF', py: 1.5 }}
+                              onClick={() => navigate('/products')}
+                            >
                               Перейти в каталог
                             </Button>
                           </Paper>

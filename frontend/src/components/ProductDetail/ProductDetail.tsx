@@ -17,12 +17,26 @@ const ProductDetail: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // const { state, forceStatus } = useQueue();
-
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setError('Товар не найден');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
     getItem(id)
-      .then(data => setProduct(data))
-      .catch(console.error);
+      .then(data => {
+        setProduct(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Ошибка загрузки товара:', err);
+        setError('Не удалось загрузить товар. Проверьте подключение к серверу.');
+        setLoading(false);
+      });
   }, [id]);
 
   const filteredProducts = useMemo(() => {
@@ -39,6 +53,10 @@ const ProductDetail: React.FC = () => {
 
   const handleBuy = async () => {
     if (!product) return;
+    if (product.sold_out) {
+      alert('Товар раскуплен');
+      return;
+    }
     if (product.is_limited) {
       try {
         await enterQueue(product.item_id);
@@ -58,12 +76,6 @@ const ProductDetail: React.FC = () => {
       }
     }
   };
-
-  if (!product) return <Typography>Загрузка...</Typography>;
-
-  const stockInfo = product.stock !== undefined && product.stock !== null
-    ? { prefix: 'В наличии: ', suffix: product.stock === 0 ? 'нет в наличии' : product.stock === 1 ? 'один' : 'несколько' }
-    : { prefix: '', suffix: '' };
 
   return (
     <Box sx={{ bgcolor: '#fff', minHeight: '100vh' }}>
@@ -104,74 +116,133 @@ const ProductDetail: React.FC = () => {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
-            <Box sx={{ flex: '0 0 60%', position: 'relative' }}> 
-              <Box component="img" src={product.image_url || getProductImage(product.item_id)} alt={product.title} onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
-              }} sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }} />
-              {product.is_limited && (
-                <Chip label="Лимитированный" sx={{ position: 'absolute', top: 16, left: 16, bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '1rem', borderRadius: 3, px: 2, py: 1 }} />
-              )}
-            </Box>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Typography variant="h4" sx={{ fontWeight: 400, mb: 1 }}>{product.title}</Typography>
-                  <IconButton onClick={() => setIsFavorite(!isFavorite)} sx={{ color: isFavorite ? '#FF6163' : '#999' }}>
-                    {isFavorite ? <Favorite /> : <FavoriteBorder />}
-                  </IconButton>
-                </Box>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: '#000', mb: 1 }}>{product.price.toLocaleString()} ₽</Typography>
-                {stockInfo.prefix && (
-                  <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem' }}>
-                    <Box component="span" sx={{ fontWeight: 500, color: '#000' }}>{stockInfo.prefix}</Box>
-                    <Box component="span" sx={{ fontWeight: 600, color: '#00C853' }}>{stockInfo.suffix}</Box>
-                  </Typography>
-                )}
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>Категория: {product.category || 'Без категории'}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Опубликовано: сегодня</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                <Button variant="contained" size="large" sx={{ bgcolor: '#00AAFF', color: '#fff', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { bgcolor: '#0088cc' } }} onClick={handleBuy}>
-                  Купить
-                </Button>
-                <Button variant="outlined" size="large" sx={{ borderColor: '#00AAFF', color: '#00AAFF', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { borderColor: '#0088cc', bgcolor: 'rgba(0,170,255,0.04)' } }}>
-                  Добавить в корзину
-                </Button>
-              </Box>
-            </Box>
+        {loading && (
+          <Typography variant="h5" sx={{ textAlign: 'center', py: 4 }}>
+            Загрузка...
+          </Typography>
+        )}
+        {error && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+              {error}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                if (id) {
+                  getItem(id)
+                    .then(data => {
+                      setProduct(data);
+                      setLoading(false);
+                    })
+                    .catch(err => {
+                      console.error(err);
+                      setError('Не удалось загрузить товар. Проверьте подключение к серверу.');
+                      setLoading(false);
+                    });
+                }
+              }}
+            >
+              Повторить
+            </Button>
           </Box>
-          {/* {import.meta.env.DEV && ( //{`https://picsum.photos/seed/${product.item_id}/600/400`}
-            <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}>
-              <Typography variant="subtitle2">Тестовый режим</Typography>
-              <FormControl fullWidth size="small" sx={{ mt: 1 }}>
-                <InputLabel>Статус товара</InputLabel>
-                <Select
-                  value={state.status || ''}d
-                  onChange={(e) => {
-                    const status = e.target.value as QueueStatus;
-                    if (product) {
-                      forceStatus(
-                        Number(product.item_id), 
-                        status as any,
-                        status === 'QUEUED' ? 480 : status === 'CHECKOUT' ? 120 : status === 'OFFERED' ? 60 : undefined
-                      );
-                      navigate(`/product/${product.item_id}/queue`);
-                    }
+        )}
+        {!loading && !error && product && (
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
+              <Box sx={{ flex: '0 0 60%', position: 'relative' }}>
+                <Box
+                  component="img"
+                  src={product.image_url || getProductImage(product.item_id)}
+                  alt={product.title}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                   }}
-                  label="Статус товара"
-                >
-                  <MenuItem value="CHECKOUT">Оформление (CHECKOUT)</MenuItem>
-                  <MenuItem value="QUEUED">Очередь (QUEUED)</MenuItem>
-                  <MenuItem value="OFFERED">Право выдано (OFFERED)</MenuItem>
-                  <MenuItem value="EXPIRED">Время вышло (EXPIRED)</MenuItem>
-                </Select>
-              </FormControl>
+                  sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }}
+                />
+                <Box sx={{ position: 'absolute', top: 16, left: 16, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {product.is_limited && (
+                    <Chip label="Лимитированный" sx={{ bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '1rem', borderRadius: 3, px: 2, py: 1 }} />
+                  )}
+                </Box>
+              </Box>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Typography variant="h4" sx={{ fontWeight: 400, mb: 1 }}>{product.title}</Typography>
+                    <IconButton onClick={() => setIsFavorite(!isFavorite)} sx={{ color: isFavorite ? '#FF6163' : '#999' }}>
+                      {isFavorite ? <Favorite /> : <FavoriteBorder />}
+                    </IconButton>
+                  </Box>
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: '#000', mb: 1 }}>{product.price.toLocaleString()} ₽</Typography>
+                  {(() => {
+                    const info = product.sold_out
+                      ? { prefix: '', suffix: 'Раскуплен', color: '#FF6163' }
+                      : product.stock !== undefined && product.stock !== null
+                        ? { prefix: 'В наличии: ', suffix: product.stock === 0 ? 'нет в наличии' : product.stock === 1 ? 'один' : 'несколько', color: '#00C853' }
+                        : { prefix: '', suffix: '', color: '#00C853' };
+                    return info.prefix && (
+                      <Typography variant="body1" sx={{ mb: 2, fontSize: '1.1rem' }}>
+                        <Box component="span" sx={{ fontWeight: 500, color: '#000' }}>{info.prefix}</Box>
+                        <Box component="span" sx={{ fontWeight: 600, color: info.color }}>{info.suffix}</Box>
+                      </Typography>
+                    );
+                  })()}
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>Категория: {product.category || 'Без категории'}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>Опубликовано: сегодня</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    sx={{ bgcolor: '#00AAFF', color: '#fff', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { bgcolor: '#0088cc' } }}
+                    onClick={handleBuy}
+                    disabled={product.sold_out}
+                  >
+                    {product.sold_out ? 'Товар раскуплен' : 'Купить'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    sx={{ borderColor: '#00AAFF', color: '#00AAFF', borderRadius: 4, textTransform: 'none', fontWeight: 600, fontSize: '1.2rem', py: 1.5, '&:hover': { borderColor: '#0088cc', bgcolor: 'rgba(0,170,255,0.04)' }, '&:active': { bgcolor: 'transparent'}}}
+                    onClick={() => alert('Корзина находится вне зоны ответственности сервиса очереди')}
+                  >
+                    Добавить в корзину
+                  </Button>
+                </Box>
+              </Box>
             </Box>
-          )} */}
-        </Paper>
+          </Paper>
+        )}
       </Container>
+      {/* {import.meta.env.DEV && (
+        <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}> Тестовый режим</Typography>
+          <FormControl fullWidth size="small">
+            <InputLabel>Статус заявки</InputLabel>
+            <Select
+              value=""
+              onChange={(e) => {
+                const status = e.target.value;
+                if (!product) return;
+                navigate(`/product/${product.item_id}/queue?mockStatus=${status}`);
+              }}
+              label="Статус заявки"
+            >
+              <MenuItem value="QUEUED">QUEUED</MenuItem>
+              <MenuItem value="OFFERED">OFFERED</MenuItem>
+              <MenuItem value="CHECKOUT">CHECKOUT</MenuItem>
+              <MenuItem value="EXPIRED">EXPIRED</MenuItem>
+              <MenuItem value="CANCELLED">CANCELLED</MenuItem>
+              <MenuItem value="PURCHASED">PURCHASED</MenuItem>
+              <MenuItem value="SOLD_OUT">SOLD_OUT</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      )} */}
     </Box>
   );
 };
