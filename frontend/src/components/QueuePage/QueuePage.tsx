@@ -152,11 +152,9 @@ const QueuePage: React.FC = () => {
                       fullWidth
                       sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
                       onClick={async () => {
-                        if (!ticket) return;
                         try {
-                          await paymentCallback(ticket.ticketId, 'paid');
+                          await paymentCallback(ticket.itemId, ticket.ticketId, 'paid');
                           alert('Оплата прошла успешно!');
-                          // Можно обновить статус или перейти
                           navigate(`/product/${ticket.itemId}`);
                         } catch (error) {
                           console.error('Ошибка оплаты:', error);

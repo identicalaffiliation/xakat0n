@@ -75,10 +75,10 @@ export const startCheckout = async (itemId: string): Promise<CheckoutStarted> =>
   return res.data;
 };
 
-export const paymentCallback = async (itemId: string, result: 'paid' | 'failed'): Promise<Ticket> => {
+export const paymentCallback = async (itemId: string, ticketId: string, result: 'paid' | 'failed'): Promise<Ticket> => {
   if (USE_MOCK) {
     return mockTicket(itemId, result === 'paid' ? 'PURCHASED' : 'CHECKOUT');
   }
-  const res = await client.post<Ticket>(`/items/${itemId}/payment/callback`, { ticketId: 'mock', result });
+  const res = await client.post<Ticket>(`/items/${itemId}/payment/callback`, { ticketId, result });
   return res.data;
 };
