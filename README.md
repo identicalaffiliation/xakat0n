@@ -133,3 +133,38 @@ Data:
 
 
 ### Вклад каждого участника
+#### Даша(DashaSmir)
+* Полностью взяла на себя UI/UX дизайн проекта.
+* Реализовала форму авторизации, каталог, карточку товара, окнол ожидания очереди на товар.
+* Реализовала фильтрацию каталога по категориям.
+* Реализовала форму покупки товара.
+* Реклизовала граммотную смену статуса на frontend для каждого события в очереди(queued -> offered -> checkout -? soldout/cancelled, etc.. )
+* Реализовала таймер очереди при помощи данных от backend.
+* Интегрировала взаимодействие frontend с backend.
+* project idea brainstorming.
+* Написала mock заглушки для дальнейшей работы после MVP в рамках финала хакатона.
+
+
+#### Даня(bober-17)
+
+
+
+#### Влад(idenicalaffiliation)
+* refactoring + project idea brainstorming.
+* review each pr.
+* unit + integration tests with testcontainers.
+* e2e auto tests with playwright and pytest.
+* Разработал inventory mock service(get item/items для каталога) + seed data.
+* Интегрировал и настроил observability for routes with Victoria Metrics and Grafana.
+* migrations with goose.
+* Реализовал полный workflow становления пользователя в очередь(атомарная вставка без гонки данных при помощи row level locking and constraints).
+
+
+#### Леша(kotafan1rich)
+* Настроил и поднял инфраструктуру при помощи Docker.
+* Интегрировал CI пайплайн(build, lint, test) в actions.
+* Разработал mock auth сервис(login endpoint, auth middleware, jwt bearer token with rsa key).
+* refactoring + project idea brainstorming.
+* unit + integration tests with testcontainers.
+* Реализовал полный workflow выхода пользователя из очереди(endpoint, usecase, repo), обновление статусов при выходе(QUEUED/OFFERED/CHECKOUT -> CANCELLED).
+* review each pr.
