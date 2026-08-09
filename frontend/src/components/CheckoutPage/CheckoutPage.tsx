@@ -99,27 +99,37 @@ const CheckoutPage: React.FC = () => {
                 <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Промокод</Typography><Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography></Paper>
                 <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}><Typography variant="caption" color="text.secondary">Скидка по карте</Typography><Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography></Paper>
               </Box>
-              <Button
-                variant="contained"
-                fullWidth
-                sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
-                onClick={async () => {
-                  if (!ticket) {
-                    alert('Нет активной заявки для оплаты');
-                    return;
-                  }
-                  try {
-                    await paymentCallback(ticket.ticketId, 'paid');
-                    alert('Оплата прошла успешно!');
-                    navigate(`/product/${product.item_id}`);
-                  } catch (error) {
-                    console.error('Ошибка оплаты:', error);
-                    alert('Ошибка при оплате. Попробуйте ещё раз.');
-                  }
-                }}
-              >
-                Оплатить
-              </Button>
+                {ticket ? (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
+                    onClick={async () => {
+                      try {
+                        await paymentCallback(product.item_id, ticket.ticketId, 'paid');
+                        alert('Оплата прошла успешно!');
+                        navigate(`/product/${product.item_id}`);
+                      } catch (error) {
+                        console.error('Ошибка оплаты:', error);
+                        alert('Ошибка при оплате');
+                      }
+                    }}
+                  >
+                    Оплатить
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
+                    onClick={() => {
+                      alert('Заказ оформлен! Оплата не требуется.');
+                      navigate('/products');
+                    }}
+                  >
+                    Оплатить
+                  </Button>
+                )}
               <Button variant="outlined" color="secondary" fullWidth sx={{ borderWidth: '3px' }} onClick={() => navigate('/products')}>Отменить заказ</Button>
             </Paper>
           </Grid>
