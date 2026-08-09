@@ -40,6 +40,8 @@ func TestItemsRepository_GetAll(t *testing.T) {
 	category := "test category"
 	expected.Category = &category
 	expected.Stock = 7
+	imagePath := "test.jpg"
+	expected.ImagePath = &imagePath
 
 	require.NoError(t, repo.CreateItem(ctx, expected))
 
@@ -52,6 +54,7 @@ func TestItemsRepository_GetAll(t *testing.T) {
 	assert.Equal(t, expected.Price, actual[0].Price)
 	assert.Equal(t, expected.Category, actual[0].Category)
 	assert.Equal(t, expected.Stock, actual[0].Stock)
+	assert.Equal(t, expected.ImagePath, actual[0].ImagePath)
 }
 
 func TestItemsRepository_GetItemByID(t *testing.T) {
@@ -90,6 +93,90 @@ func TestItemsRepository_GetItemByID(t *testing.T) {
 		assert.Nil(t, actual)
 		assert.ErrorIs(t, err, domain.ErrItemNotFound)
 	})
+}
+
+func TestItemsRepository_GetSimilarByCategory(t *testing.T) {
+	t.Run("returns items in the same category, excluding itself", func(t *testing.T) {
+		truncate(db, t)
+		ctx := context.Background()
+		repo := postgres.NewItemsRepository(db)
+
+		category := "Недвижимость на Луне"
+		other := "Хозтовары"
+
+		self := domain.NewItem("Море Спокойствия", "d", 100, true)
+		self.Category = &category
+		require.NoError(t, repo.CreateItem(ctx, self))
+
+		sameCategory := domain.NewItem("Море Дождей", "d", 100, true)
+		sameCategory.Category = &category
+		require.NoError(t, repo.CreateItem(ctx, sameCategory))
+
+		otherCategory := domain.NewItem("Пакет пакетов", "d", 100, true)
+		otherCategory.Category = &other
+		require.NoError(t, repo.CreateItem(ctx, otherCategory))
+
+		all, err := repo.GetAll(ctx)
+		require.NoError(t, err)
+		selfID := findByTitle(t, all, "Море Спокойствия").ID
+
+		actual, err := repo.GetSimilarByCategory(ctx, selfID, category, 6)
+		require.NoError(t, err)
+
+		require.Len(t, actual, 1)
+		assert.Equal(t, "Море Дождей", actual[0].Title)
+	})
+
+	t.Run("respects limit", func(t *testing.T) {
+		truncate(db, t)
+		ctx := context.Background()
+		repo := postgres.NewItemsRepository(db)
+
+		category := "Недвижимость на Луне"
+		for _, title := range []string{"a", "b", "c", "d"} {
+			item := domain.NewItem(title, "d", 100, true)
+			item.Category = &category
+			require.NoError(t, repo.CreateItem(ctx, item))
+		}
+
+		all, err := repo.GetAll(ctx)
+		require.NoError(t, err)
+
+		actual, err := repo.GetSimilarByCategory(ctx, all[0].ID, category, 2)
+		require.NoError(t, err)
+		assert.Len(t, actual, 2)
+	})
+
+	t.Run("no matches returns empty slice", func(t *testing.T) {
+		truncate(db, t)
+		ctx := context.Background()
+		repo := postgres.NewItemsRepository(db)
+
+		category := "Недвижимость на Луне"
+		item := domain.NewItem("a", "d", 100, true)
+		item.Category = &category
+		require.NoError(t, repo.CreateItem(ctx, item))
+
+		all, err := repo.GetAll(ctx)
+		require.NoError(t, err)
+
+		actual, err := repo.GetSimilarByCategory(ctx, all[0].ID, category, 6)
+		require.NoError(t, err)
+		assert.Empty(t, actual)
+	})
+}
+
+func findByTitle(t *testing.T, items []*domain.Item, title string) *domain.Item {
+	t.Helper()
+
+	for _, item := range items {
+		if item.Title == title {
+			return item
+		}
+	}
+
+	t.Fatalf("item with title %q not found", title)
+	return nil
 }
 
 func TestItemsRepository_LockStock(t *testing.T) {

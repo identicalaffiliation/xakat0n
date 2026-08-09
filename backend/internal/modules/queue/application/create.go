@@ -41,14 +41,15 @@ func (u *CreateQueueUsecase) CreateQueue(
 	ctx context.Context,
 	in *dto.CreateQueueRequest,
 ) (*dto.Ticket, error) {
-	if err := u.advance.AdvanceQueue(ctx, in.ProductID, u.ttl); err != nil {
+	if err := u.advance.AdvanceQueue(ctx, in.ItemID, u.ttl); err != nil {
 		if errors.Is(err, domain.ErrItemNotFound) {
 			return nil, domain.ErrItemNotFound
 		}
 
 		u.logger.Error(
 			"failed to advance queue before create",
-			"item_id", in.ProductID,
+			"itemId", in.ItemID,
+			"userId", in.UserID,
 			"error", err,
 		)
 		return nil, domain.ErrInternal
@@ -61,8 +62,8 @@ func (u *CreateQueueUsecase) CreateQueue(
 			!errors.Is(err, domain.ErrItemNotFound) {
 			u.logger.Error(
 				"failed to put user in queue",
-				"item_id", in.ProductID,
-				"user_id", in.UserID,
+				"itemId", in.ItemID,
+				"userId", in.UserID,
 				"error", err,
 			)
 		}
@@ -79,7 +80,7 @@ func (u *CreateQueueUsecase) createQueueTicket(
 ) (domain.Queue, error) {
 	var created domain.Queue
 	err := u.txManager.WithTx(ctx, func(ctx context.Context) error {
-		item, err := u.items.LockStock(ctx, in.ProductID)
+		item, err := u.items.LockStock(ctx, in.ItemID)
 		if err != nil {
 			return err
 		}
@@ -88,7 +89,7 @@ func (u *CreateQueueUsecase) createQueueTicket(
 			return domain.ErrQueueNotApplicable
 		}
 
-		soldOut, err := u.repo.IsSoldOut(ctx, in.ProductID, item.Stock)
+		soldOut, err := u.repo.IsSoldOut(ctx, in.ItemID, item.Stock)
 		if err != nil {
 			return err
 		}
@@ -96,7 +97,7 @@ func (u *CreateQueueUsecase) createQueueTicket(
 			return domain.ErrItemSoldOut
 		}
 
-		existing, err := u.repo.GetActiveTicket(ctx, in.ProductID, in.UserID)
+		existing, err := u.repo.GetActiveTicket(ctx, in.ItemID, in.UserID)
 		if err != nil {
 			return err
 		}
@@ -107,13 +108,13 @@ func (u *CreateQueueUsecase) createQueueTicket(
 
 		queue, err := u.repo.CreateQueue(
 			ctx,
-			domain.NewQueue(in.ProductID, in.UserID),
+			domain.NewQueue(in.ItemID, in.UserID),
 		)
 		if err != nil {
 			if errors.Is(err, domain.ErrUserAlreadyQueued) {
 				existing, getErr := u.repo.GetActiveTicket(
 					ctx,
-					in.ProductID,
+					in.ItemID,
 					in.UserID,
 				)
 				if getErr != nil {
@@ -130,7 +131,7 @@ func (u *CreateQueueUsecase) createQueueTicket(
 			return err
 		}
 
-		taken, err := u.repo.CountTaken(ctx, in.ProductID)
+		taken, err := u.repo.CountTaken(ctx, in.ItemID)
 		if err != nil {
 			return err
 		}
@@ -139,7 +140,7 @@ func (u *CreateQueueUsecase) createQueueTicket(
 			promoted, expiresAt, err := u.repo.TryPromoteUser(
 				ctx,
 				queue.ID,
-				in.ProductID,
+				in.ItemID,
 				u.ttl,
 			)
 			if err != nil {
@@ -167,13 +168,13 @@ func (u *CreateQueueUsecase) buildTicket(ctx context.Context, created domain.Que
 		return ticket, nil
 	}
 
-	ahead, err := u.repo.CountQueuedAhead(ctx, created.ProductID, created.CreatedAt)
+	ahead, err := u.repo.CountQueuedAhead(ctx, created.ItemID, created.CreatedAt)
 	if err != nil {
 		u.logger.Error("failed to count queued ahead", "error", err)
 		return nil, domain.ErrInternal
 	}
 
-	nextFree, err := u.repo.NextSlotFreeAt(ctx, created.ProductID)
+	nextFree, err := u.repo.NextSlotFreeAt(ctx, created.ItemID)
 	if err != nil {
 		u.logger.Error("failed to get next slot free at", "error", err)
 		return nil, domain.ErrInternal

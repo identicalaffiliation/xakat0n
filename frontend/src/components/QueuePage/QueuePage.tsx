@@ -6,15 +6,21 @@ import {
 } from '@mui/material'; 
 import { Person, FavoriteBorder } from '@mui/icons-material';
 import { getQueueStatus, cancelQueue, startCheckout, paymentCallback, type Ticket } from '../../api/queue';
-import { getSimilar, type Item } from '../../api/items';
+import { getItem, getSimilar, type Item } from '../../api/items';
 import { getProductImage } from '../../utils/imageUtils';
 const QueuePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); 
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [product, setProduct] = useState<Item | null>(null);
   const [similar, setSimilar] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [timer, setTimer] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    getItem(id).then(setProduct).catch(console.error);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -91,8 +97,7 @@ const QueuePage: React.FC = () => {
     </Container>
   );
 
-  // const productImage = `https://picsum.photos/seed/${ticket.itemId}/200/200`;
-  const productImage = getProductImage(ticket.itemId);
+  const productImage = product?.image_url || getProductImage(ticket.itemId);
   const renderContent = () => {
     switch (ticket.status) {
       case 'CHECKOUT':
@@ -240,7 +245,7 @@ const QueuePage: React.FC = () => {
                 <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                   {similar.map(p => (
                     <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                      <img src={productImage} alt={p.title} onError={(e) => {
+                      <img src={p.image_url || getProductImage(p.item_id)} alt={p.title} onError={(e) => {
                         (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                       }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                       <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
@@ -378,7 +383,7 @@ const QueuePage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     {similar.map(p => (
                       <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                        <img src={productImage} alt={p.title} onError={(e) => {
+                        <img src={p.image_url || getProductImage(p.item_id)} alt={p.title} onError={(e) => {
                           (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                         }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                         <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
@@ -445,7 +450,7 @@ const QueuePage: React.FC = () => {
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                       {similar.map(p => (
                         <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                          <img src={productImage} alt={p.title} onError={(e) => {
+                          <img src={p.image_url || getProductImage(p.item_id)} alt={p.title} onError={(e) => {
                             (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                           }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                           <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
@@ -511,7 +516,7 @@ const QueuePage: React.FC = () => {
                       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                         {similar.map(p => (
                           <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                            <img src={productImage} alt={p.title} onError={(e) => {
+                            <img src={p.image_url || getProductImage(p.item_id)} alt={p.title} onError={(e) => {
                               (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
                             }} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                             <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
@@ -569,7 +574,7 @@ const QueuePage: React.FC = () => {
                         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                           {similar.map(p => (
                             <Paper key={p.item_id} sx={{ p: 1, width: 140, cursor: 'pointer' }} onClick={() => navigate(`/product/${p.item_id}`)}>
-                              <img src={getProductImage(ticket.itemId)} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                              <img src={p.image_url || getProductImage(p.item_id)} alt={p.title} style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
                               <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>{p.title}</Typography>
                               <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{p.price.toLocaleString()} ₽</Typography>
                             </Paper>

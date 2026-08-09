@@ -89,6 +89,7 @@ func main() {
 
 	auth.RegisterRoutes(router)
 	items.RegisterRoutes(router)
+	router.Handle("/api/v1/static/images/*", http.StripPrefix("/api/v1/static/images/", http.FileServer(http.Dir("assets/images"))))
 
 	router.Group(func(r chi.Router) {
 		r.Use(httpx.JWTAuth(verifier))

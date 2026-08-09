@@ -15,9 +15,9 @@ import (
 
 func (repo *QueueRepository) CreateQueue(ctx context.Context, queue *domain.Queue) (*domain.Queue, error) {
 	const query string = `INSERT INTO
-    queues (id, product_id, user_id)
+	queues (id, item_id, user_id)
 		VALUES ($1, $2, $3) RETURNING
-		id, product_id, user_id, status,
+		id, item_id, user_id, status,
 		created_at, updated_at, expires_at`
 
 	var created domain.Queue
@@ -25,11 +25,11 @@ func (repo *QueueRepository) CreateQueue(ctx context.Context, queue *domain.Queu
 		ctx,
 		query,
 		queue.ID,
-		queue.ProductID,
+		queue.ItemID,
 		queue.UserID,
 	).Scan(
 		&created.ID,
-		&created.ProductID,
+		&created.ItemID,
 		&created.UserID,
 		&created.Status,
 		&created.CreatedAt,
@@ -49,20 +49,20 @@ func (repo *QueueRepository) CreateQueue(ctx context.Context, queue *domain.Queu
 
 func (repo *QueueRepository) GetActiveTicket(
 	ctx context.Context,
-	productID, userID uuid.UUID,
+	itemID, userID uuid.UUID,
 ) (*domain.Queue, error) {
 	const query = `
-		SELECT id, product_id, user_id, status, created_at, updated_at, expires_at
+		SELECT id, item_id, user_id, status, created_at, updated_at, expires_at
 		FROM queues
-		WHERE product_id = $1 AND user_id = $2
+		WHERE item_id = $1 AND user_id = $2
 		AND status IN ('QUEUED', 'OFFERED', 'CHECKOUT')
 		ORDER BY created_at DESC
 		LIMIT 1`
 
 	var q domain.Queue
-	err := repo.dbtx(ctx).QueryRow(ctx, query, productID, userID).Scan(
+	err := repo.dbtx(ctx).QueryRow(ctx, query, itemID, userID).Scan(
 		&q.ID,
-		&q.ProductID,
+		&q.ItemID,
 		&q.UserID,
 		&q.Status,
 		&q.CreatedAt,
@@ -81,7 +81,7 @@ func (repo *QueueRepository) GetActiveTicket(
 
 func (repo *QueueRepository) TryPromoteUser(
 	ctx context.Context,
-	queueID, productID uuid.UUID,
+	queueID, itemID uuid.UUID,
 	ttl time.Duration,
 ) (bool, *time.Time, error) {
 	const query string = `
@@ -93,17 +93,17 @@ func (repo *QueueRepository) TryPromoteUser(
 		AND status = 'QUEUED'::queue_status
 		AND NOT EXISTS (
 			SELECT 1 FROM queues
-			WHERE product_id = $2
+			WHERE item_id = $2
 			AND status IN ('OFFERED', 'CHECKOUT')
 		)
 		AND NOT EXISTS(
 			SELECT 1 FROM queues
-			WHERE product_id = $2
+			WHERE item_id = $2
 			AND status = 'SOLD_OUT'::queue_status
 		)
 		AND NOT EXISTS(
 			SELECT 1 FROM queues AS q
-			WHERE q.product_id = $2
+			WHERE q.item_id = $2
 			AND q.status = 'QUEUED'::queue_status
 			AND q.created_at < queues.created_at
 		)
@@ -120,7 +120,7 @@ func (repo *QueueRepository) TryPromoteUser(
 		ctx,
 		query,
 		queueID,
-		productID,
+		itemID,
 		ttlStr,
 	).Scan(&expiresAt)
 	if err != nil {

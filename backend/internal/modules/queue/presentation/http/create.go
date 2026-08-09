@@ -15,7 +15,7 @@ import (
 
 func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		productID, err := uuid.Parse(chi.URLParam(r, ItemIDParam))
+		itemID, err := uuid.Parse(chi.URLParam(r, ItemIDParam))
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
@@ -27,7 +27,7 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 			return
 		}
 
-		response, err := usecase.CreateQueue(r.Context(), dto.NewCreateRequest(productID, userID))
+		response, err := usecase.CreateQueue(r.Context(), dto.NewCreateRequest(itemID, userID))
 		if err != nil {
 			switch {
 			case errors.Is(err, domain.ErrQueueNotApplicable):

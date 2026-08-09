@@ -7,13 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func (repo *QueueRepository) IsSoldOut(ctx context.Context, productID uuid.UUID, stock int) (bool, error) {
+func (repo *QueueRepository) IsSoldOut(ctx context.Context, itemID uuid.UUID, stock int) (bool, error) {
 	const query = `
 		SELECT COUNT(*) FROM queues
-		WHERE product_id = $1 AND status = 'PURCHASED'::queue_status`
+		WHERE item_id = $1 AND status = 'PURCHASED'::queue_status`
 
 	var purchased int
-	if err := repo.dbtx(ctx).QueryRow(ctx, query, productID).Scan(&purchased); err != nil {
+	if err := repo.dbtx(ctx).QueryRow(ctx, query, itemID).Scan(&purchased); err != nil {
 		return false, fmt.Errorf("is sold out: %w", err)
 	}
 
@@ -31,9 +31,9 @@ func (repo *QueueRepository) CountPurchased(ctx context.Context, itemIDs []uuid.
 	}
 
 	const query = `
-		SELECT product_id, COUNT(*) FROM queues
-		WHERE product_id = ANY($1) AND status = 'PURCHASED'::queue_status
-		GROUP BY product_id`
+		SELECT item_id, COUNT(*) FROM queues
+		WHERE item_id = ANY($1) AND status = 'PURCHASED'::queue_status
+		GROUP BY item_id`
 
 	rows, err := repo.dbtx(ctx).Query(ctx, query, itemIDs)
 	if err != nil {
@@ -42,13 +42,13 @@ func (repo *QueueRepository) CountPurchased(ctx context.Context, itemIDs []uuid.
 	defer rows.Close()
 
 	for rows.Next() {
-		var productID uuid.UUID
+		var itemID uuid.UUID
 		var count int
-		if err := rows.Scan(&productID, &count); err != nil {
+		if err := rows.Scan(&itemID, &count); err != nil {
 			return nil, fmt.Errorf("scan count purchased: %w", err)
 		}
 
-		counts[productID] = count
+		counts[itemID] = count
 	}
 
 	if err := rows.Err(); err != nil {

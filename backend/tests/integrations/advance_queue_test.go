@@ -26,14 +26,14 @@ func newAdvanceQueueUsecase() *application.AdvanceQueueUsecase {
 	return application.NewAdvanceQueueUsecase(itemsRepo, queueRepo, txManager, slog.Default())
 }
 
-func countTicketsByStatus(t *testing.T, productID uuid.UUID, status domain.QueueStatus) int {
+func countTicketsByStatus(t *testing.T, itemID uuid.UUID, status domain.QueueStatus) int {
 	t.Helper()
 
 	var count int
 	err := db.QueryRow(
 		context.Background(),
-		`SELECT COUNT(*) FROM queues WHERE product_id = $1 AND status = $2::queue_status`,
-		productID,
+		`SELECT COUNT(*) FROM queues WHERE item_id = $1 AND status = $2::queue_status`,
+		itemID,
 		status,
 	).Scan(&count)
 	require.NoError(t, err)
@@ -44,14 +44,14 @@ func countTicketsByStatus(t *testing.T, productID uuid.UUID, status domain.Queue
 // seedQueuedBatch сеет n QUEUED-тикетов на один товар с гарантированно возрастающим
 // created_at (репозиторий CreateQueue не даёт задать created_at явно, а конкурентный
 // INSERT ... DEFAULT now() внутри одной операции не гарантирует детерминированный порядок).
-func seedQueuedBatch(t *testing.T, productID uuid.UUID, n int) []uuid.UUID {
+func seedQueuedBatch(t *testing.T, itemID uuid.UUID, n int) []uuid.UUID {
 	t.Helper()
 
 	base := time.Now().UTC().Add(-time.Hour)
 	ids := make([]uuid.UUID, n)
 	for i := range ids {
 		ids[i] = uuid.New()
-		seedTicket(t, ids[i], productID, uuid.New(), domain.QueueStatusQueued, base.Add(time.Duration(i)*time.Millisecond), nil)
+		seedTicket(t, ids[i], itemID, uuid.New(), domain.QueueStatusQueued, base.Add(time.Duration(i)*time.Millisecond), nil)
 	}
 
 	return ids
