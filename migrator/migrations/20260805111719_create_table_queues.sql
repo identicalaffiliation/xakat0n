@@ -11,7 +11,7 @@ CREATE TYPE queue_status AS ENUM (
 
 CREATE TABLE IF NOT EXISTS queues (
     id UUID PRIMARY KEY NOT NULL,
-    product_id UUID NOT NULL REFERENCES items(id),
+    item_id UUID NOT NULL REFERENCES items(id),
     user_id UUID NOT NULL,
     status queue_status NOT NULL DEFAULT 'QUEUED',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -20,15 +20,15 @@ CREATE TABLE IF NOT EXISTS queues (
 );
 
 CREATE UNIQUE INDEX idx_queue_unique_user_product
-    ON queues (product_id, user_id)
+    ON queues (item_id, user_id)
     WHERE status IN ('QUEUED', 'OFFERED', 'CHECKOUT', 'SOLD_OUT');
 
 CREATE INDEX idx_queue_product_status
-    ON queues (product_id, status)
+    ON queues (item_id, status)
     WHERE status IN ('OFFERED', 'CHECKOUT');
 
 CREATE INDEX idx_queue_product_status_created
-    ON queues (product_id, status, created_at);
+    ON queues (item_id, status, created_at);
 
 -- +goose Down
 DROP INDEX IF EXISTS idx_queue_product_status_created;

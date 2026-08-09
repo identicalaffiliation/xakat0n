@@ -11,16 +11,16 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/modules/queue/domain"
 )
 
-func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uuid.UUID) (*domain.Queue, error) {
+func (repo *QueueRepository) QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*domain.Queue, error) {
 	const quitUserQuery string = `
 		UPDATE queues
 		SET status = 'CANCELLED', updated_at = now()
-		WHERE product_id = $1
+		WHERE item_id = $1
 		AND user_id = $2
 		AND status IN ('QUEUED', 'OFFERED', 'CHECKOUT')
 		RETURNING
 			id,
-			product_id,
+			item_id,
 			user_id,
 			status,
 			created_at,
@@ -28,9 +28,9 @@ func (repo *QueueRepository) QuitQueue(ctx context.Context, productID, userID uu
 			expires_at
 	`
 	var queue domain.Queue
-	err := repo.dbtx(ctx).QueryRow(ctx, quitUserQuery, productID, userID).Scan(
+	err := repo.dbtx(ctx).QueryRow(ctx, quitUserQuery, itemID, userID).Scan(
 		&queue.ID,
-		&queue.ProductID,
+		&queue.ItemID,
 		&queue.UserID,
 		&queue.Status,
 		&queue.CreatedAt,

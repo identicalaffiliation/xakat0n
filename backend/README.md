@@ -71,13 +71,13 @@ presentation/http  →  application  →  ports  ←  infrastructure/postgres
 
 ## Как добавить новую ручку в существующий модуль (`queue`)
 
-На примере: `queue` уже содержит `POST /products/{productId}/queue`. Пусть нужно добавить,
-например, `GET /products/{productId}/queue/me`.
+На примере: `queue` уже содержит `POST /products/{itemId}/queue`. Пусть нужно добавить,
+например, `GET /products/{itemId}/queue/me`.
 
 1. **`domain/`** — если нужны новые правила/поля на сущности, добавляй сюда. Для чтения статуса
    обычно ничего нового не требуется.
 2. **`ports/`** — опиши, что usecase'у нужно от репозитория (`repo.go`) — например,
-   `GetByProductAndUser(ctx, productID, userID) (*domain.Queue, error)`.
+   `GetByProductAndUser(ctx, itemID, userID) (*domain.Queue, error)`.
 3. **`infrastructure/postgres/`** — реализуй этот метод в `QueueRepository` (SQL-запрос).
 4. **`dto/`** — опиши форму ответа, если она отличается от того, что уже есть.
 5. **`application/`** — новый usecase (или метод на существующем): принимает `ports.QueueRepository`

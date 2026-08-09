@@ -3,13 +3,13 @@ package dto
 import "github.com/google/uuid"
 
 type CreateQueueRequest struct {
-	ProductID uuid.UUID `json:"productId" validate:"required"`
-	UserID    uuid.UUID `json:"userId" validate:"required"`
+	ItemID uuid.UUID `json:"itemId" validate:"required"`
+	UserID uuid.UUID `json:"userId" validate:"required"`
 }
 
-func NewCreateRequest(productID, userID uuid.UUID) *CreateQueueRequest {
+func NewCreateRequest(itemID, userID uuid.UUID) *CreateQueueRequest {
 	return &CreateQueueRequest{
-		ProductID: productID,
-		UserID:    userID,
+		ItemID: itemID,
+		UserID: userID,
 	}
 }

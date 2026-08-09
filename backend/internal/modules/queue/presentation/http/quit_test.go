@@ -59,7 +59,7 @@ func TestQuitQueueHandler_Success(t *testing.T) {
 	userID := uuid.New()
 	usecase := &quitUsecaseStub{response: dto.NewTicket(&domain.Queue{
 		ID:        uuid.New(),
-		ProductID: itemID,
+		ItemID: itemID,
 		UserID:    userID,
 		Status:    domain.QueueStatusCancelled,
 	}, time.Now())}
