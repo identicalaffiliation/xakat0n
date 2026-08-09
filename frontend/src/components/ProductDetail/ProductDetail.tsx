@@ -9,7 +9,7 @@ import { getItem, type Item } from '../../api/items';
 import { enterQueue, startCheckout } from '../../api/queue';
 // import { useQueue } from '../../context/QueueContext';
 import { products, type Product } from '../../data/products';
-
+import { getProductImage } from '../../utils/imageUtils';
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -106,8 +106,10 @@ const ProductDetail: React.FC = () => {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Paper elevation={0} sx={{ p: 3, borderRadius: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
-            <Box sx={{ flex: '0 0 60%', position: 'relative' }}>
-              <Box component="img" src={`https://picsum.photos/seed/${product.item_id}/600/400`} alt={product.title} sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }} />
+            <Box sx={{ flex: '0 0 60%', position: 'relative' }}> 
+              <Box component="img" src={getProductImage(product.item_id)} alt={product.title} onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/products/placeholder.jpg';
+              }} sx={{ width: '100%', height: 'auto', borderRadius: 4, maxHeight: 600, objectFit: 'cover' }} />
               {product.is_limited && (
                 <Chip label="Лимитированный" sx={{ position: 'absolute', top: 16, left: 16, bgcolor: '#FF6163', color: '#fff', fontWeight: 600, fontSize: '1rem', borderRadius: 3, px: 2, py: 1 }} />
               )}
@@ -140,7 +142,7 @@ const ProductDetail: React.FC = () => {
               </Box>
             </Box>
           </Box>
-          {/* {import.meta.env.DEV && (
+          {/* {import.meta.env.DEV && ( //{`https://picsum.photos/seed/${product.item_id}/600/400`}
             <Box sx={{ mt: 4, p: 2, border: '1px dashed #ccc', borderRadius: 2 }}>
               <Typography variant="subtitle2">Тестовый режим</Typography>
               <FormControl fullWidth size="small" sx={{ mt: 1 }}>
