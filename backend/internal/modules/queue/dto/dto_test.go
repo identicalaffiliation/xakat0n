@@ -32,7 +32,7 @@ func TestNewTicket(t *testing.T) {
 		expiresAt := now.Add(90 * time.Second)
 		queue := &domain.Queue{
 			ID:        queueID,
-			ItemID: itemID,
+			ItemID:    itemID,
 			Status:    domain.QueueStatusOffered,
 			ExpiresAt: &expiresAt,
 			CreatedAt: now.Add(-time.Minute),
@@ -56,7 +56,7 @@ func TestNewTicket(t *testing.T) {
 		expiresAt := now.Add(10 * time.Second)
 		queue := &domain.Queue{
 			ID:        uuid.New(),
-			ItemID: itemID,
+			ItemID:    itemID,
 			Status:    domain.QueueStatusCheckout,
 			ExpiresAt: &expiresAt,
 		}
@@ -69,9 +69,9 @@ func TestNewTicket(t *testing.T) {
 
 	t.Run("queued has no window", func(t *testing.T) {
 		queue := &domain.Queue{
-			ID:        uuid.New(),
+			ID:     uuid.New(),
 			ItemID: itemID,
-			Status:    domain.QueueStatusQueued,
+			Status: domain.QueueStatusQueued,
 		}
 
 		ticket := NewTicket(queue, now)
@@ -84,7 +84,7 @@ func TestNewTicket(t *testing.T) {
 		expiresAt := now.Add(-5 * time.Second)
 		queue := &domain.Queue{
 			ID:        uuid.New(),
-			ItemID: itemID,
+			ItemID:    itemID,
 			Status:    domain.QueueStatusOffered,
 			ExpiresAt: &expiresAt,
 		}
@@ -97,9 +97,9 @@ func TestNewTicket(t *testing.T) {
 
 	t.Run("terminal status without expires at", func(t *testing.T) {
 		queue := &domain.Queue{
-			ID:        uuid.New(),
+			ID:     uuid.New(),
 			ItemID: itemID,
-			Status:    domain.QueueStatusPurchased,
+			Status: domain.QueueStatusPurchased,
 		}
 
 		ticket := NewTicket(queue, now)
@@ -118,7 +118,7 @@ func TestSetQueuedFields(t *testing.T) {
 		nextFree := now.Add(42 * time.Second)
 		ticket := NewTicket(&domain.Queue{
 			ID:        uuid.New(),
-			ItemID: uuid.New(),
+			ItemID:    uuid.New(),
 			Status:    domain.QueueStatusQueued,
 			CreatedAt: now,
 		}, now)
@@ -134,7 +134,7 @@ func TestSetQueuedFields(t *testing.T) {
 	t.Run("first in line is position one", func(t *testing.T) {
 		ticket := NewTicket(&domain.Queue{
 			ID:        uuid.New(),
-			ItemID: uuid.New(),
+			ItemID:    uuid.New(),
 			Status:    domain.QueueStatusQueued,
 			CreatedAt: now,
 		}, now)
