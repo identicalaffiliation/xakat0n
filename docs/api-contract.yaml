@@ -546,6 +546,10 @@ components:
             только по PURCHASED: пока чьё-то право ещё действует
             и может завершиться покупкой или истечь, объявлять товар
             распроданным для остальных нельзя.
+        imageUrl:
+          type: string
+          nullable: true
+          description: Абсолютный путь к фото товара, отдаётся самим backend.
       example:
         itemId: "a1b2c3d4-0000-0000-0000-000000000001"
         title: "Кроссовки, лимитированная коллекция"
@@ -555,6 +559,7 @@ components:
         isLimited: true
         stock: 1
         soldOut: false
+        imageUrl: "/api/v1/static/images/sneakers.jpg"
 
     Ticket:
       type: object

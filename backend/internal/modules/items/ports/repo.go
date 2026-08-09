@@ -16,6 +16,7 @@ type ItemsRepository interface {
 	CreateItem(ctx context.Context, item *domain.Item) error
 	GetAll(ctx context.Context) ([]*domain.Item, error)
 	GetItemByID(ctx context.Context, itemID uuid.UUID) (*domain.Item, error)
+	GetSimilarByCategory(ctx context.Context, itemID uuid.UUID, category string, limit int) ([]*domain.Item, error)
 }
 
 // SoldOutChecker — реализуется queue-модулем (queues — его таблица), items

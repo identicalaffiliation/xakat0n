@@ -13,10 +13,12 @@ import (
 )
 
 type fakeItemsRepo struct {
-	items     []*domain.Item
-	item      *domain.Item
-	getErr    error
-	getAllErr error
+	items      []*domain.Item
+	item       *domain.Item
+	similar    []*domain.Item
+	getErr     error
+	getAllErr  error
+	similarErr error
 }
 
 func (f *fakeItemsRepo) CreateItem(ctx context.Context, item *domain.Item) error {
@@ -29,6 +31,10 @@ func (f *fakeItemsRepo) GetAll(ctx context.Context) ([]*domain.Item, error) {
 
 func (f *fakeItemsRepo) GetItemByID(ctx context.Context, itemID uuid.UUID) (*domain.Item, error) {
 	return f.item, f.getErr
+}
+
+func (f *fakeItemsRepo) GetSimilarByCategory(ctx context.Context, itemID uuid.UUID, category string, limit int) ([]*domain.Item, error) {
+	return f.similar, f.similarErr
 }
 
 type fakeLogger struct{}
@@ -168,6 +174,55 @@ func TestGetItemUsecase(t *testing.T) {
 		usecase := NewGetItemUsecase(&fakeItemsRepo{getErr: errors.New("db down")}, &fakeSoldOutChecker{}, &fakeLogger{})
 
 		_, err := usecase.GetItem(context.Background(), uuid.New())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrInternal)
+	})
+}
+
+func TestGetSimilarItemsUsecase(t *testing.T) {
+	t.Parallel()
+
+	t.Run("item not found is passed through", func(t *testing.T) {
+		usecase := NewGetSimilarItemsUsecase(&fakeItemsRepo{getErr: domain.ErrItemNotFound}, &fakeSoldOutChecker{}, &fakeLogger{})
+
+		_, err := usecase.GetSimilarItems(context.Background(), uuid.New(), 6)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, domain.ErrItemNotFound)
+	})
+
+	t.Run("item without category returns empty slice without querying repo", func(t *testing.T) {
+		item := &domain.Item{ID: uuid.New(), Title: "a", Price: 1}
+		repo := &fakeItemsRepo{item: item, similarErr: errors.New("should not be called")}
+		usecase := NewGetSimilarItemsUsecase(repo, &fakeSoldOutChecker{}, &fakeLogger{})
+
+		response, err := usecase.GetSimilarItems(context.Background(), item.ID, 6)
+		require.NoError(t, err)
+		assert.Empty(t, response)
+	})
+
+	t.Run("success returns mapped items with soldOut", func(t *testing.T) {
+		category := "Кроссовки"
+		item := &domain.Item{ID: uuid.New(), Title: "a", Price: 1, Category: &category}
+		similarID := uuid.New()
+		similar := []*domain.Item{{ID: similarID, Title: "b", Price: 2, Category: &category, IsLimited: true, Stock: 1}}
+		checker := &fakeSoldOutChecker{purchased: map[uuid.UUID]int{similarID: 1}}
+		repo := &fakeItemsRepo{item: item, similar: similar}
+		usecase := NewGetSimilarItemsUsecase(repo, checker, &fakeLogger{})
+
+		response, err := usecase.GetSimilarItems(context.Background(), item.ID, 6)
+		require.NoError(t, err)
+		require.Len(t, response, 1)
+		assert.Equal(t, similarID, response[0].ItemID)
+		assert.True(t, response[0].SoldOut)
+	})
+
+	t.Run("repository error is wrapped as internal", func(t *testing.T) {
+		category := "Кроссовки"
+		item := &domain.Item{ID: uuid.New(), Title: "a", Price: 1, Category: &category}
+		repo := &fakeItemsRepo{item: item, similarErr: errors.New("db down")}
+		usecase := NewGetSimilarItemsUsecase(repo, &fakeSoldOutChecker{}, &fakeLogger{})
+
+		_, err := usecase.GetSimilarItems(context.Background(), item.ID, 6)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, domain.ErrInternal)
 	})

@@ -38,19 +38,21 @@ export type Item = {
   is_limited: boolean;
   stock?: number | null;
   sold_out: boolean;
+  image_url?: string;
 };
 
 const mapItem = (raw: any): Item => {
   const data = raw.item || raw;
   return {
-    item_id: data.itemId,          
+    item_id: data.itemId,
     title: data.title,
     description: data.description || '',
     price: data.price,
     category: data.category || undefined,
     is_limited: data.isLimited ?? false,
     stock: data.stock ?? null,
-    sold_out: data.soldOut ?? false,     
+    sold_out: data.soldOut ?? false,
+    image_url: data.imageUrl || undefined,
   };
 };
 // export const getItems = async (): Promise<Item[]> => {
