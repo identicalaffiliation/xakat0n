@@ -40,15 +40,10 @@ func NewQuitQueueUsecase(
 func (u *QuitQueueUsecase) QuitQueue(ctx context.Context, itemID, userID uuid.UUID) (*dto.Ticket, error) {
 	queue, err := u.queue.QuitQueue(ctx, itemID, userID)
 	if err != nil {
-		ctx = u.logger.ContextFromError(ctx, err)
 		if errors.Is(err, domain.ErrQueueNotFound) {
-			u.logger.WarnContext(
-				ctx,
-				"queue not found",
-				"error", err,
-			)
 			return nil, u.logger.WrapError(ctx, err)
 		}
+		ctx = u.logger.ContextFromError(ctx, err)
 		u.logger.ErrorContext(
 			ctx,
 			"failed to Quit from queue",

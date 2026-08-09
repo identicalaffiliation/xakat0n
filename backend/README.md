@@ -122,7 +122,7 @@ presentation/http  →  application  →  ports  ←  infrastructure/postgres
 ### Инициализация
 
 В `cmd/api/main.go` создаётся один объект `logger.Logging` на всё приложение. Внутри него
-находятся `*slog.Logger` и `*logctx.LogCtx`:
+находятся абстракция `ContextLogger` и `*logctx.LogCtx`:
 
 ```go
 slogger, err := logger.NewLogger(cfg)
@@ -130,6 +130,33 @@ if err != nil {
 	log.Fatal(err)
 }
 ```
+
+`Logging` не привязан к конкретной библиотеке логирования:
+
+```go
+type Logging struct {
+	logger  ContextLogger
+	context *logctx.LogCtx
+}
+
+type ContextLogger interface {
+	DebugContext(ctx context.Context, msg string, args ...any)
+	InfoContext(ctx context.Context, msg string, args ...any)
+	WarnContext(ctx context.Context, msg string, args ...any)
+	ErrorContext(ctx context.Context, msg string, args ...any)
+}
+```
+
+`NewLogger` является готовой фабрикой реализации на `slog`, но это не ограничение самой
+обёртки. Другой логгер можно подключить через небольшой адаптер и общий конструктор:
+
+```go
+logging := logger.NewLogging(customLogger, logctx.NewLogCtx())
+```
+
+`customLogger` может использовать zap, zerolog или другую библиотеку — ему достаточно
+реализовать `ContextLogger`. Благодаря этому замена библиотеки не затрагивает модули и механизм
+переноса полей через контекст.
 
 В конструкторы модулей передаётся только этот объект:
 

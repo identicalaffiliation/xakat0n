@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"os"
@@ -22,10 +23,23 @@ var (
 
 	stdout = os.Stdout
 )
+type ContextLogger interface {
+	DebugContext(ctx context.Context, msg string, args ...any)
+	InfoContext(ctx context.Context, msg string, args ...any)
+	WarnContext(ctx context.Context, msg string, args ...any)
+	ErrorContext(ctx context.Context, msg string, args ...any)
+}
 
 type Logging struct {
-	*slog.Logger
+	logger  ContextLogger
 	context *logctx.LogCtx
+}
+
+func NewLogging(logger ContextLogger, logContext *logctx.LogCtx) *Logging {
+	return &Logging{
+		logger:  logger,
+		context: logContext,
+	}
 }
 
 func NewLogger(cfg *config.APIConfig) (*Logging, error) {
@@ -56,8 +70,21 @@ func NewLogger(cfg *config.APIConfig) (*Logging, error) {
 	logContext := logctx.NewLogCtx()
 	handler = NewHandlerMiddleware(handler, logContext)
 
-	return &Logging{
-		Logger:  slog.New(handler),
-		context: logContext,
-	}, nil
+	return NewLogging(slog.New(handler), logContext), nil
+}
+
+func (l *Logging) DebugContext(ctx context.Context, msg string, args ...any) {
+	l.logger.DebugContext(ctx, msg, args...)
+}
+
+func (l *Logging) InfoContext(ctx context.Context, msg string, args ...any) {
+	l.logger.InfoContext(ctx, msg, args...)
+}
+
+func (l *Logging) WarnContext(ctx context.Context, msg string, args ...any) {
+	l.logger.WarnContext(ctx, msg, args...)
+}
+
+func (l *Logging) ErrorContext(ctx context.Context, msg string, args ...any) {
+	l.logger.ErrorContext(ctx, msg, args...)
 }
