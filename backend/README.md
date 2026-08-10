@@ -35,7 +35,7 @@ backend/
 │       ├── logger/              # Logger-интерфейс + реализация на log/slog
 │       ├── httpserver/          # голый http.Server + chi.Router с общими middleware,
 │       │                        # ничего не знает о роутах конкретных модулей
-│       └── httpx/               # SessionAuth (мидлварь авторизации), EncodeJSON
+│       └── httpx/               # JWTAuth (мидлварь авторизации), EncodeJSON
 │
 ├── tests/
 │   └── integrations/            # интеграционные тесты на реальном Postgres (testcontainers)
@@ -71,8 +71,8 @@ presentation/http  →  application  →  ports  ←  infrastructure/postgres
 
 ## Как добавить новую ручку в существующий модуль (`queue`)
 
-На примере: `queue` уже содержит `POST /products/{itemId}/queue`. Пусть нужно добавить,
-например, `GET /products/{itemId}/queue/me`.
+На примере: `queue` уже содержит `POST /items/{itemId}/queue`. Пусть нужно добавить,
+например, `GET /items/{itemId}/queue/me`.
 
 1. **`domain/`** — если нужны новые правила/поля на сущности, добавляй сюда. Для чтения статуса
    обычно ничего нового не требуется.
@@ -83,9 +83,12 @@ presentation/http  →  application  →  ports  ←  infrastructure/postgres
 5. **`application/`** — новый usecase (или метод на существующем): принимает `ports.QueueRepository`
    и остальные порты через конструктор, реализует бизнес-логику поверх интерфейсов.
 6. **`presentation/http/`** — новый хендлер `http.HandlerFunc`, парсит path/заголовки, зовёт
-   usecase, сериализует ответ через `httpx.EncodeJSON`. Достаёт `user_id`, положенный
-   `httpx.SessionAuth`, через `httpx.UserID(r.Context())` — сам заголовок не парсит.
-7. **`module.go`** — зарегистрируй роут: `r.With(httpx.SessionAuth).Get(route, handler.GetMyQueue(usecase))`.
+   usecase, сериализует ответ через `httpx.EncodeJSON`. Достаёт `user_id` через
+   `httpx.UserID(r.Context())` — сам заголовок не парсит и ничего не знает про JWT.
+7. **`module.go`** — зарегистрируй роут на своём под-роутере: `r.With(httpx.Metrics).Get(route,
+   handler.GetMyTicket(usecase))`. Авторизацию отдельно вешать не нужно — `httpx.JWTAuth(verifier)`
+   применяется один раз глобально на весь роутер в `cmd/api/main.go` (`r.Use(...)`), а не на
+   каждый роут по отдельности.
    Если новому usecase'у нужны новые зависимости — прокинь их через сигнатуру `queue.New(...)`
    и через вызов в `cmd/api/main.go`.
 8. Тесты: юнит — рядом с кодом (`_test.go` в том же пакете); интеграционные, если метод трогает
