@@ -21,7 +21,7 @@ graph LR
     BE --> Q["internal/queue"]
     BE --> I["internal/items"]
     BE --> A["internal/auth"]
-    BE --> C["internal/checkout (заглушка)"]
+    BE --> C["internal/checkout"]
     Q --> DB[("PostgreSQL")]
     I --> DB
     A --> DB
@@ -33,8 +33,8 @@ graph LR
 |---|---|---|
 | `internal/queue` | Тикеты, статусы, атомарность создания и продвижения, таймер права, polling-эндпоинт | Высокий — берём в разработку первой |
 | `internal/items` | Каталог, флаг дефицита, остаток, похожие лоты | Средний |
-| `internal/auth` | Упрощённая идентификация: login по username, выдача и резолв сессионных токенов | Низкий |
-| `internal/checkout` | Заглушка перехода к оформлению и приёма исхода попытки оплаты | Низкий |
+| `internal/auth` | Упрощённая идентификация: login по username, выдача и проверка JWT | Низкий |
+| `internal/checkout` | Переход к оформлению и приём исхода попытки оплаты; сам платёжный провайдер снаружи — заглушка, наша логика реальна | Низкий |
 
 `internal/queue` не делится на создание и продвижение как отдельные подмодули: обе операции используют общую логику подсчёта свободных мест и завязаны на одну и ту же блокировку строки товара — разделение создало бы постоянную стыковку по общим внутренним функциям вместо реальной параллелизации.
 
@@ -46,7 +46,7 @@ graph LR
 
 | Эндпоинт | advance | Что делает |
 |---|---|---|
-| `POST /auth/login` | — | Находит или создаёт пользователя по username, выдаёт `sessionToken`. Единственный эндпоинт без авторизации |
+| `POST /auth/login` | — | Находит или создаёт пользователя по username, выдаёт JWT. Единственный эндпоинт без авторизации |
 
 ### `internal/items`
 
@@ -86,9 +86,9 @@ graph LR
 
 Полноценная авторизация вне скоупа кейса, но упрощение не должно ломать центральную механику: право на покупку обязано быть **персональным и непередаваемым**.
 
-Поэтому `user_id` от клиента не принимается ни в каком виде. `POST /auth/login` по имени пользователя выдаёт `session_token` — 32 случайных байта из `crypto/rand` в base64url. Middleware резолвит токен в `user_id` через таблицу `sessions`; при отсутствии или невалидности — `401`. Все проверки права работают с `user_id`, полученным на сервере.
+Поэтому `user_id` от клиента не принимается ни в каком виде. `POST /auth/login` по имени пользователя ищет или создаёт пользователя (`GetOrCreate` — атомарный upsert по `username` через `ON CONFLICT`, без гонки при параллельных логинах одним именем) и выдаёт JWT, подписанный RS256 (пара ключей `backend/keys/private.pem` / `public.pem`), с `user_id` в `sub`. Middleware `JWTAuth` на каждом запросе проверяет подпись и срок действия токена и достаёт `user_id` в контекст; при отсутствии, повреждении или истечении — `401`. Все проверки права работают с `user_id`, полученным сервером из токена, а не присланным клиентом. Отдельной таблицы сессий нет — JWT самодостаточен, для его проверки не нужно ничего хранить на сервере.
 
-Почему заголовок `X-Session-Token`, а не cookie: несколько одновременно открытых окон инкогнито делят между собой одну сессию кук (изоляция наступает только при закрытии всех окон), и демо с несколькими параллельными покупателями превратилось бы в демо одного пользователя. Токен хранится на фронте в `sessionStorage` — он изолирован между вкладками, в отличие от `localStorage`, и переживает перезагрузку страницы, в отличие от переменной в памяти. Последнее и есть механика восстановления сессии (E1): при возврате на страницу токен на месте, сервер по нему отдаёт тот же `user_id` и тот же тикет.
+Почему заголовок `Authorization: Bearer`, а не cookie: несколько одновременно открытых окон инкогнито делят между собой одну сессию кук (изоляция наступает только при закрытии всех окон), и демо с несколькими параллельными покупателями превратилось бы в демо одного пользователя. Токен хранится на фронте в `sessionStorage` — он изолирован между вкладками, в отличие от `localStorage`, и переживает перезагрузку страницы, в отличие от переменной в памяти. Последнее и есть механика восстановления сессии (E1): при возврате на страницу токен на месте, сервер по нему отдаёт тот же `user_id` и тот же тикет.
 
 ## Схема БД
 
@@ -99,31 +99,28 @@ CREATE TABLE users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE sessions (
-    token      TEXT PRIMARY KEY,
-    user_id    UUID NOT NULL REFERENCES users(id),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 CREATE TABLE items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     description TEXT,
-    price NUMERIC(12,2) NOT NULL,
+    price BIGINT NOT NULL CHECK (price >= 0),  -- в минимальных денежных единицах (копейки)
     category TEXT,
     is_limited BOOLEAN NOT NULL DEFAULT false,
-    stock INT NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    stock INT NOT NULL DEFAULT 1 CHECK (stock >= 0),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    image_path TEXT
 );
 
-CREATE TABLE queue_tickets (
+CREATE TYPE queue_status AS ENUM (
+    'QUEUED','OFFERED','CHECKOUT','PURCHASED',
+    'EXPIRED','SOLD_OUT','CANCELLED'
+);
+
+CREATE TABLE queues (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     item_id UUID NOT NULL REFERENCES items(id),
     user_id UUID NOT NULL REFERENCES users(id),
-    status TEXT NOT NULL CHECK (status IN (
-        'QUEUED','OFFERED','CHECKOUT','PURCHASED',
-        'EXPIRED','SOLD_OUT','CANCELLED'
-    )),
+    status queue_status NOT NULL DEFAULT 'QUEUED',
     created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -133,24 +130,25 @@ CREATE TABLE queue_tickets (
     expires_at         TIMESTAMPTZ
 );
 
--- Один активный тикет на пару (товар, пользователь) — только для активных статусов,
--- иначе истёкшее или отменённое право не даст встать в очередь заново
-CREATE UNIQUE INDEX uniq_active_ticket_per_user_item
-    ON queue_tickets (item_id, user_id)
-    WHERE status IN ('QUEUED', 'OFFERED', 'CHECKOUT');
+-- Один активный тикет на пару (товар, пользователь) — для активных статусов и SOLD_OUT.
+-- SOLD_OUT входит намеренно: сток не пополняется, повторный вход в очередь на
+-- распроданный товар бессмысленен, а без этого статуса в индексе POST /queue
+-- создавал бы бесконечные дубли для того, кто продолжает жать «Купить»
+CREATE UNIQUE INDEX idx_queue_unique_user_item
+    ON queues (item_id, user_id)
+    WHERE status IN ('QUEUED', 'OFFERED', 'CHECKOUT', 'SOLD_OUT');
 
 -- Быстрая выборка "следующий по очереди для этого товара"
-CREATE INDEX idx_queue_position
-    ON queue_tickets (item_id, created_at)
-    WHERE status = 'QUEUED';
+CREATE INDEX idx_queue_item_status_created
+    ON queues (item_id, status, created_at);
 
 -- Быстрый поиск просроченных прав
-CREATE INDEX idx_active_deadlines
-    ON queue_tickets (item_id, expires_at)
+CREATE INDEX idx_queue_item_status
+    ON queues (item_id, status)
     WHERE status IN ('OFFERED', 'CHECKOUT');
 ```
 
-Частичный индекс и отдельный индекс под очередь — прямое следствие того, что мы уже разобрали: истёкшее право должно давать шанс попробовать снова, а выборка «следующего» должна быть быстрой при большом числе тикетов. `CHECKOUT` входит в частичный уникальный индекс, потому что это тоже активное состояние — второй тикет на тот же товар пользователю не нужен.
+Частичные индексы — прямое следствие того, что мы уже разобрали: истёкшее право должно давать шанс попробовать снова, а выборка «следующего» должна быть быстрой при большом числе тикетов. `CHECKOUT` входит в уникальный индекс, потому что это тоже активное состояние — второй тикет на тот же товар пользователю не нужен.
 
 ## Одно окно на весь путь покупки
 
@@ -196,7 +194,7 @@ advanceQueue(item_id):
 
   -- 1. Просроченные права -> EXPIRED.
   --    Дедлайн один на оба активных статуса, поэтому UPDATE один.
-  UPDATE queue_tickets SET status='EXPIRED'
+  UPDATE queues SET status='EXPIRED'
       WHERE item_id=$1 AND status IN ('OFFERED','CHECKOUT')
         AND expires_at < now()
 
@@ -206,13 +204,13 @@ advanceQueue(item_id):
 
   -- 3. Продвижение очереди, если есть места
   IF free_slots > 0:
-      UPDATE (SELECT id FROM queue_tickets WHERE item_id=$1 AND status='QUEUED'
+      UPDATE (SELECT id FROM queues WHERE item_id=$1 AND status='QUEUED'
               ORDER BY created_at LIMIT free_slots FOR UPDATE SKIP LOCKED)
       SET status='OFFERED', expires_at = now() + purchase_window
 
   -- 4. Весь сток выкуплен -> освобождаем оставшихся в очереди
   IF (COUNT WHERE item_id=$1 AND status='PURCHASED') >= stock:
-      UPDATE queue_tickets SET status='SOLD_OUT'
+      UPDATE queues SET status='SOLD_OUT'
           WHERE item_id=$1 AND status='QUEUED'
 
   COMMIT
@@ -278,7 +276,7 @@ COMMIT
 Вычисляется отдельным дешёвым запросом при отдаче статуса (`GET /queue/me`), не внутри `advanceQueue` — блокировка не нужна, это чисто информационное число, не влияющее ни на какие решения:
 
 ```sql
-SELECT COUNT(*) + 1 FROM queue_tickets
+SELECT COUNT(*) + 1 FROM queues
 WHERE item_id = $1 AND status = 'QUEUED' AND created_at < $my_created_at
 ```
 
@@ -287,7 +285,7 @@ WHERE item_id = $1 AND status = 'QUEUED' AND created_at < $my_created_at
 Вместе с позицией отдаём `nextSlotFreeInSeconds`:
 
 ```sql
-SELECT MIN(expires_at) - now() FROM queue_tickets
+SELECT MIN(expires_at) - now() FROM queues
 WHERE item_id = $1 AND status IN ('OFFERED', 'CHECKOUT')
 ```
 
@@ -334,7 +332,7 @@ WHERE item_id = $1 AND status IN ('OFFERED', 'CHECKOUT')
 1. **Атомарность резервирования** — риск снят блокировкой строки товара, взятой первой операцией во всех транзакциях; `SKIP LOCKED` при продвижении — оптимизация, а не источник гарантии
 2. **Расхождение часов клиент/сервер** — снято: фронт получает готовые секунды отсчёта, а не абсолютное время
 3. **Незавершённое оформление** — снято: `expires_at` действует и в `CHECKOUT`, истечение переводит тикет в `EXPIRED` и освобождает единицу независимо от того, на каком шаге застрял пользователь
-4. **Подмена личности** — снята сессионными токенами: `user_id` от клиента не принимается
+4. **Подмена личности** — снята JWT-токенами: `user_id` от клиента не принимается
 5. **Polling «зависает»**, если никто не запрашивает статус — задокументированное ограничение MVP (E2); на корректность не влияет, обе финальные проверки сверяют время напрямую
 6. **Истечение окна во время платёжной сессии** — принято как ограничение MVP: если `paid` приходит после `expires_at`, он отклоняется, возврат средств делает платёжный сервис. Заморозку таймера на время попытки не берём — она открывает дыру (фиктивная попытка держит товар бесконечно), а безопасная версия («одна заморозка, не дольше 120 секунд, только при зарегистрированной незавершённой попытке») это отдельная подсистема. Вынесено в Could-have; на 90-секундном демо-окне с мгновенной заглушкой не воспроизводится
 7. **ИИ-интеграция** (если берём как Could-фичу) — нужен fallback на случай проблем с сетью прямо во время демо

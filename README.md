@@ -53,7 +53,7 @@ backend/
 │       ├── logger/              # Logger-интерфейс + реализация на log/slog
 │       ├── httpserver/          # голый http.Server + chi.Router с общими middleware,
 │       │                        # ничего не знает о роутах конкретных модулей
-│       └── httpx/               # SessionAuth (мидлварь авторизации), EncodeJSON
+│       └── httpx/               # JWTAuth (мидлварь авторизации), EncodeJSON
 │
 ├── tests/
 │   └── integrations/            # интеграционные тесты на реальном Postgres (testcontainers)
