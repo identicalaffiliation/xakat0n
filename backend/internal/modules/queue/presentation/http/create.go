@@ -13,13 +13,9 @@ import (
 	"github.com/identicalaffiliation/xakat0n/backend/internal/shared/httpx"
 )
 
-const (
-	ItemIdMuxPattern = "itemId"
-)
-
 func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
+		itemID, err := uuid.Parse(chi.URLParam(r, ItemIDParam))
 		if err != nil {
 			httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid item id")
 			return
@@ -48,46 +44,4 @@ func PutUserInQueue(usecase ports.CreateUsecase) http.HandlerFunc {
 
 		httpx.EncodeJSON(w, response, http.StatusOK)
 	}
-}
-
-func QuitQueue(usecase ports.QuitUsecase) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		itemID, userID, ok := queueIDs(w, r)
-		if !ok {
-			return
-		}
-
-		response, err := usecase.QuitQueue(r.Context(), itemID, userID)
-		if err != nil {
-			if errors.Is(err, domain.ErrQueueNotFound) {
-				httpx.WriteError(w, http.StatusNotFound, "ticket_not_found", "user has no ticket for this item")
-
-				return
-			}
-
-			httpx.WriteError(w, http.StatusInternalServerError, "internal_error", "internal server error")
-
-			return
-		}
-
-		httpx.EncodeJSON(w, response, http.StatusOK)
-	}
-}
-
-func queueIDs(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
-	itemID, err := uuid.Parse(chi.URLParam(r, ItemIdMuxPattern))
-	if err != nil {
-		httpx.WriteError(w, http.StatusBadRequest, "bad_request", "invalid item id")
-
-		return uuid.Nil, uuid.Nil, false
-	}
-
-	userID, ok := httpx.UserID(r.Context())
-	if !ok {
-		httpx.WriteError(w, http.StatusUnauthorized, "unauthorized", "missing or invalid session")
-
-		return uuid.Nil, uuid.Nil, false
-	}
-
-	return itemID, userID, true
 }
