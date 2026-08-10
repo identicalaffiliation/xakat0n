@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams} from 'react-router-dom';
 import {
-  Box, Typography, Button, Paper, Container, CircularProgress, Divider, Grid,
-  TextField, AppBar, Toolbar, IconButton
-} from '@mui/material'; 
+  Box, Typography, Button, Paper, Container, CircularProgress, Grid,
+  AppBar, Toolbar, IconButton
+} from '@mui/material';
 import { Person, FavoriteBorder } from '@mui/icons-material';
-import { getQueueStatus, cancelQueue, startCheckout, paymentCallback, type Ticket } from '../../api/queue';
+import { getQueueStatus, cancelQueue, startCheckout, type Ticket } from '../../api/queue';
 import { getItem, getSimilar, type Item } from '../../api/items';
 import { getProductImage } from '../../utils/imageUtils';
 
@@ -36,8 +36,12 @@ const QueuePage: React.FC = () => {
         if (['PURCHASED', 'EXPIRED', 'SOLD_OUT', 'CANCELLED'].includes(data.status)) {
           clearInterval(interval);
         }
-      } catch (error) {
-        setTicket(null);
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          setTicket(null);
+        } else {
+          console.error('Ошибка обновления статуса очереди:', error);
+        }
       } finally {
         setLoading(false);
       }
@@ -167,126 +171,6 @@ const QueuePage: React.FC = () => {
   );
   const renderContent = () => {
     switch (ticket.status) {
-      case 'CHECKOUT':
-        return (
-          <Box>
-            {renderHeader()}
-            <Container maxWidth="lg" sx={{ py: 4 }}>
-              <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, mb: 4 }}>Оформление заказа</Typography>
-              <Grid container spacing={4}>
-                {renderProductCard()}
-                <Grid size={{ xs: 12, md: 5 }}>
-                  <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
-                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
-                      Оформление заказа
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                      <CircularProgress
-                        variant="determinate"
-                        value={((timer || 0) / 120) * 100}
-                        size={80}
-                        sx={{ color: 'primary.main' }}
-                      />
-                      <Typography variant="h4" sx={{ fontWeight: 700, ml: 2 }}>
-                        {formatTime(timer || 0)}
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
-                      Осталось времени для оплаты. Успейте завершить покупку.
-                    </Typography>
-
-                    {/* Детали заказа */}
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>Детали заказа</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography>Товар</Typography>
-                      <Typography sx={{ fontWeight: 500 }}>{product ? product.title : 'Загрузка...'}</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography>Количество</Typography>
-                      <Typography sx={{ fontWeight: 500 }}>1 шт.</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                      <Typography>Стоимость</Typography>
-                      <Typography sx={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                        {product ? product.price.toLocaleString() : '—'} ₽
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>Данные получателя</Typography>
-                    <TextField
-                      fullWidth
-                      label="ФИО получателя"
-                      variant="outlined"
-                      size="small"
-                      value="Иванов Иван Иванович"
-                      sx={{ mb: 2 }}
-                      slotProps={{ input: { readOnly: true } }}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Контактный телефон"
-                      variant="outlined"
-                      size="small"
-                      value="+7 (999) 123-45-67"
-                      sx={{ mb: 2 }}
-                      slotProps={{ input: { readOnly: true } }}
-                    />
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}>
-                        <Typography variant="caption" color="text.secondary">Промокод</Typography>
-                        <Typography sx={{ fontWeight: 500 }}>AVITO10 – скидка 10%</Typography>
-                      </Paper>
-                      <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff' }}>
-                        <Typography variant="caption" color="text.secondary">Скидка по карте</Typography>
-                        <Typography sx={{ fontWeight: 500 }}>5% (накопительная)</Typography>
-                      </Paper>
-                    </Box>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      sx={{ bgcolor: '#A169F7', py: 1.5, mb: 1 }}
-                      onClick={async () => {
-                        try {
-                          await paymentCallback(ticket.itemId, ticket.ticketId, 'paid');
-                          alert('Оплата прошла успешно!');
-                          navigate(`/product/${ticket.itemId}`);
-                        } catch (error) {
-                          console.error('Ошибка оплаты:', error);
-                          alert('Ошибка при оплате');
-                        }
-                      }}
-                    >
-                      Оплатить
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      fullWidth
-                      sx={{ borderWidth: '3px' }}
-                      onClick={async () => {
-                        await cancelQueue(ticket.itemId);
-                        navigate(`/product/${ticket.itemId}`);
-                      }}
-                    >
-                      Отменить заказ
-                    </Button>
-
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, textAlign: 'center' }}>
-                      Нажимая «Оплатить», вы соглашаетесь с условиями оферты и политикой обработки данных.
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-              <Box sx={{ mt: 6, pt: 3, borderTop: '1px solid #e0e0e0', textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">Нажимая «Оплатить», вы соглашаетесь с условиями оферты и политикой обработки данных.</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Доставка осуществляется в течение 2–3 рабочих дней. Возврат товара возможен в течение 14 дней.</Typography>
-              </Box>
-            </Container>
-          </Box>
-        );
-
       case 'QUEUED':
         return (
           <Box>
@@ -298,10 +182,10 @@ const QueuePage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>
-                      Вы {ticket.position ? `${ticket.position}-й` : 'в'} очереди
+                      Вы {ticket.position ? `${ticket.position}-й в` : 'в'} очереди
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 2 }}>
-                      Место освободится не позже чем через{' '}
+                      Ближайшее место по этому товару освободится не позже чем через{' '}
                       {ticket.nextSlotFreeInSeconds
                         ? formatTime(ticket.nextSlotFreeInSeconds)
                         : 'несколько секунд'}
@@ -354,6 +238,8 @@ const QueuePage: React.FC = () => {
         );
 
       case 'OFFERED':
+      case 'CHECKOUT': {
+        const isCheckoutStarted = ticket.status === 'CHECKOUT';
         return (
           <Box>
             {renderHeader()}
@@ -395,7 +281,7 @@ const QueuePage: React.FC = () => {
                 <Grid size={{ xs: 12, md: 5 }}>
                   <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: '#f5f5f5' }}>
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: '#00C853' }}>
-                      Товар ваш!
+                      {isCheckoutStarted ? 'Оформление начато' : 'Товар ваш!'}
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
                       <CircularProgress
@@ -409,7 +295,9 @@ const QueuePage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
-                      У вас есть время, чтобы перейти к оформлению и оплатить заказ.
+                      {isCheckoutStarted
+                        ? 'Товар держится за вами, пока идёт время.'
+                        : 'У вас есть время, чтобы перейти к оформлению и оплатить заказ.'}
                     </Typography>
                     <Button
                       variant="contained"
@@ -417,11 +305,20 @@ const QueuePage: React.FC = () => {
                       fullWidth
                       sx={{ py: 1.5, mb: 1 }}
                       onClick={async () => {
-                        await startCheckout(ticket.itemId);
-                        navigate(`/product/${ticket.itemId}/checkout`);
+                        if (isCheckoutStarted) {
+                          navigate(`/product/${ticket.itemId}/checkout`);
+                          return;
+                        }
+                        try {
+                          await startCheckout(ticket.itemId);
+                          navigate(`/product/${ticket.itemId}/checkout`);
+                        } catch (error) {
+                          console.error('Ошибка при переходе к оформлению:', error);
+                          alert('Не удалось перейти к оформлению. Попробуйте ещё раз.');
+                        }
                       }}
                     >
-                      Перейти к оформлению
+                      {isCheckoutStarted ? 'Продолжить оформление' : 'Перейти к оформлению'}
                     </Button>
                     <Button
                       variant="outlined"
@@ -445,6 +342,7 @@ const QueuePage: React.FC = () => {
             </Container>
           </Box>
         );
+      }
         case 'EXPIRED':
           return (
             <Box>
