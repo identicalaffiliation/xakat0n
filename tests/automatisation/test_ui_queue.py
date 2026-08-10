@@ -55,7 +55,8 @@ def test_buy_limited_item_gets_offer_and_checkout(
     page.get_by_role("heading", name=SEED_LIMITED).wait_for()
 
     page.get_by_role("button", name="Отменить заказ").click()
-    page.wait_for_url("**/products")
+    page.wait_for_url(f"**/product/{item_id}")
+    page.get_by_role("button", name="Купить").wait_for()
 
 
 def test_second_user_queues_while_first_holds_right(
@@ -77,7 +78,7 @@ def test_second_user_queues_while_first_holds_right(
         page2.get_by_role("button", name="Купить").click()
         page2.wait_for_url(f"**/product/{item_id}/queue")
         page2.get_by_text("Очередь ожидания на лимитированный товар").wait_for()
-        page2.get_by_role("heading", name=re.compile(r"Вы \d+-й очереди")).wait_for()
+        page2.get_by_role("heading", name=re.compile(r"Вы \d+-й в очереди")).wait_for()
     finally:
         context.close()
 
