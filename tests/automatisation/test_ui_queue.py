@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from playwright.sync_api import APIRequestContext, Browser, Page
@@ -46,7 +47,7 @@ def test_buy_limited_item_gets_offer_and_checkout(
     item_id = open_product(page, SEED_LIMITED)
     page.get_by_role("button", name="Купить").click()
     page.wait_for_url(f"**/product/{item_id}/queue")
-    page.get_by_role("heading", name="Товар освободился!").wait_for()
+    page.get_by_role("heading", name="Товар ваш!").wait_for()
 
     page.get_by_role("button", name="Перейти к оформлению").click()
     page.wait_for_url(f"**/product/{item_id}/checkout")
@@ -66,7 +67,7 @@ def test_second_user_queues_while_first_holds_right(
     page.goto(f"{frontend_url}/product/{item_id}")
     page.get_by_role("button", name="Купить").click()
     page.wait_for_url(f"**/product/{item_id}/queue")
-    page.get_by_role("heading", name="Товар освободился!").wait_for()
+    page.get_by_role("heading", name="Товар ваш!").wait_for()
 
     context = browser.new_context()
     page2 = context.new_page()
@@ -76,7 +77,7 @@ def test_second_user_queues_while_first_holds_right(
         page2.get_by_role("button", name="Купить").click()
         page2.wait_for_url(f"**/product/{item_id}/queue")
         page2.get_by_text("Очередь ожидания на лимитированный товар").wait_for()
-        page2.get_by_text("Ваше место").wait_for()
+        page2.get_by_role("heading", name=re.compile(r"Вы \d+-й очереди")).wait_for()
     finally:
         context.close()
 

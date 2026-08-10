@@ -21,7 +21,7 @@ def test_login_with_empty_name_blocks_with_alert(
 ) -> None:
     with expect_dialog() as dialog:
         auth_page.get_by_role("button", name="Войти").click()
-    assert dialog["message"] == "Введите имя"
+    assert dialog["message"] == "Пожалуйста, введите свое имя"
     assert "products" not in auth_page.url
     auth_page.get_by_role("button", name="Войти").is_visible()
 
@@ -32,4 +32,4 @@ def test_login_with_too_short_name_shows_error(
     auth_page.get_by_label("Имя").fill("ab")
     with expect_dialog() as dialog:
         auth_page.get_by_role("button", name="Войти").click()
-    assert dialog["message"] == "Ошибка входа"
+    assert dialog["message"] == "Имя должно содержать минимум 3 символа"
